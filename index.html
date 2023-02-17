@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <link rel="stylesheet" type="text/css" href="libraries/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+
+    <link href='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css' rel='stylesheet' />
+    <script src='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'></script>
+    <script src="libraries/js/astronomy.browser.js"></script>
+    <script src="js/sample_meteo_response.js"></script>
+    <script src="js/get_data.js"></script>
+
+    <meta charset="utf-8" />
+    <title>astro_photo_suitability</title>
+
+
+</head>
+
+<body>
+    <div class="container-fluid fill">
+        <div class="row header">
+            <h1 id="title">Astro Photo</h1>
+        </div>
+        <div class="row main">
+
+            <div class="col-md-5">
+
+
+
+            </div>
+
+            <div class="col-md-7">
+
+            </div>
+
+
+        </div>
+        <div class="row">
+            <div id='map' style='width: 400px; height: 300px;'></div>
+            <script>
+                var map = new maplibregl.Map({
+                    container: 'map',
+                    style: 'https://demotiles.maplibre.org/style.json', // stylesheet location
+                    center: [13, 53], // starting position [lng, lat]
+                    zoom: 3 // starting zoom
+                });
+            </script>
+        </div>
+        <div class="row footer">
+            <p class="footer-text">contact: <a href="mailto:arne.ruemmler@gmail.com">arne.ruemmler@gmail.com</a>
+                <br>
+
+                source code: <a href="https://github.com/rue-a/L-Systems">https://github.com/rue-a/L-Systems</a>
+            </p>
+        </div>
+    </div>
+
+
+
+</body>
+
+</html>
