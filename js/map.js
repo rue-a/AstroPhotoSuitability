@@ -95,7 +95,7 @@ if (navigator.geolocation) {
 
 map.on('click', function (e) {
     marker.setLngLat(e.lngLat).addTo(map);
-    console.log();
+    // console.log();
     // get_sample_time_table());
     get_meteo_data(e.lngLat.lat, e.lngLat.lng).then((meteo_data) => {
         get_time_table(meteo_data)
