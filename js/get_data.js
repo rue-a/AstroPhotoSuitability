@@ -1,10 +1,4 @@
-(function (moment) {
-    moment.fn.nozone = function () {
-        var m1 = moment(this);
-        var offsetInMinutes = m1.utcOffset();
-        return m1.utc().add(offsetInMinutes, 'm');
-    };
-}(moment));
+
 
 async function get_meteo_data(lat, lon) {
     const query = `https://api.open-meteo.com/v1/gfs?forecast_days=16&latitude=${lat}&longitude=${lon}&hourly=temperature_2m,cloudcover&timezone=auto`;
@@ -30,7 +24,7 @@ function get_mean(arr) {
 }
 
 function aggregate_values(arr, i, len) {
-    /** aggregates a given subset of an array of values beginning at index i and ending at index i+len. 
+    /** aggregates the values of a given subset of an array beginning at index i and ending at index i+len. 
      *
      * @param {Array.<Number>} arr Array with the parameter's values.
      * @param {Number} i Integer that indicates where in the array the aggregation starts.
@@ -58,7 +52,7 @@ async function load_timezone_ref(url) {
     return json;
 }
 
-async function aggregate_meteo_data(data) {
+async function aggregate_meteo_data(data, agg_len) {
     /** aggregates meteorological data into time frames of 
      * four hours beginning at 17:00 and ending at 05:00
      * 
@@ -81,8 +75,7 @@ async function aggregate_meteo_data(data) {
     delete aggregated.units.time
     for (let i in data.hourly.time) {
         i = parseInt(i)
-        // aggregate over 4 hours
-        agg_len = 4
+
         if (i != 0 && !(i % 24)) { day_counter++; }
         let a = day_counter * 24;
         datetime = new Date(data.hourly.time[i])
@@ -93,39 +86,36 @@ async function aggregate_meteo_data(data) {
             night_date = new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate())
             night_date = night_date.toDateString()
         }
-
         if (i >= 12 && i < data.hourly.time.length - 12) {
             // ignore first half night and last half night
             let key = null;
+            let time = (new Date((new Date(data.hourly.time[i]).valueOf() + new Date(data.hourly.time[i + agg_len - 1]).valueOf()) / 2)).toISOString()
+
             if (i - a == 17) {
-                key = `${night_date} 17:00-20:00`
+                key = time
                 aggregated[key] = aggregate_time_frame(data.hourly, i, agg_len)
-                let time = new Date((new Date(data.hourly.time[i]).valueOf() + new Date(data.hourly.time[i + agg_len - 1]).valueOf()) / 2)
-                console.log(moment.tz(time, aggregated.timezone).format())
-                console.log(moment.tz(time, aggregated.timezone).nozone().format())
-                console.log(new Date(moment.tz(time, aggregated.timezone).nozone()))
-                console.log(time)
-                aggregated[key].time_frame_center = new Date((new Date(data.hourly.time[i]).valueOf() + new Date(data.hourly.time[i + agg_len - 1]).valueOf()) / 2)
+                aggregated[key].time_frame_center = time
             }
             if (i - a == 20) {
-                key = `${night_date} 20:00-23:00`
+                key = time
                 aggregated[key] = aggregate_time_frame(data.hourly, i, agg_len)
-                aggregated[key].time_frame_center = new Date((new Date(data.hourly.time[i]).valueOf() + new Date(data.hourly.time[i + agg_len - 1]).valueOf()) / 2)
+                aggregated[key].time_frame_center = time
             }
             if (i - a == 23) {
-                key = `${night_date} 23:00-02:00`
+                key = time
                 aggregated[key] = aggregate_time_frame(data.hourly, i, agg_len)
-                aggregated[key].time_frame_center = new Date((new Date(data.hourly.time[i]).valueOf() + new Date(data.hourly.time[i + agg_len - 1]).valueOf()) / 2)
+                aggregated[key].time_frame_center = time
             }
             if (i - a == 2) {
-                key = `${night_date} 02:00-05:00`
+                key = time
                 aggregated[key] = aggregate_time_frame(data.hourly, i, agg_len)
-                aggregated[key].time_frame_center = new Date((new Date(data.hourly.time[i]).valueOf() + new Date(data.hourly.time[i + agg_len - 1]).valueOf()) / 2)
+                aggregated[key].time_frame_center = time
             }
             if (key) { order_of_keys.push(key) }
         }
         aggregated.order_of_time_frames = order_of_keys
     }
+    console.log(aggregated)
     return aggregated
 }
 
@@ -282,7 +272,8 @@ function get_sample_time_table() {
 // console.log(aggregated)
 
 async function get_time_table(meteo_data) {
-    const aggregated = await aggregate_meteo_data(meteo_data);
+    let agg_len = 4
+    const aggregated = await aggregate_meteo_data(meteo_data, agg_len);
     let observer = new Astronomy.Observer(aggregated.latitude, aggregated.longitude, aggregated.elevation);
     for (let time_frame of aggregated.order_of_time_frames) {
         aggregated[time_frame] = astro_enrich_time_frame(aggregated[time_frame], observer)
@@ -291,6 +282,6 @@ async function get_time_table(meteo_data) {
     for (let time_frame of aggregated.order_of_time_frames) {
         aggregated[time_frame] = calculate_suitability(aggregated[time_frame])
     }
-    build_time_table(aggregated)
+    build_time_table(aggregated, agg_len)
 }
 

@@ -1,5 +1,5 @@
 const cellSize = 40;
-const cellPadding = cellSize/10;
+const cellPadding = cellSize / 10;
 const svg_padding_left = 20;
 const svg_padding_right = 20;
 const time_label_hor_space = 35;
@@ -7,18 +7,18 @@ const date_label_vert_space = 105;
 const svg_padding_top = 20;
 const svg_padding_bot = 20;
 
-const width = (cellSize+cellPadding) * 15 + cellPadding +time_label_hor_space+ svg_padding_left + svg_padding_right
+const width = (cellSize + cellPadding) * 15 + cellPadding + time_label_hor_space + svg_padding_left + svg_padding_right
 // + 120 is the height of the date sting on the bottom
-const height = (cellSize+cellPadding) * 4 + cellPadding + date_label_vert_space + svg_padding_top + svg_padding_bot
+const height = (cellSize + cellPadding) * 4 + cellPadding + date_label_vert_space + svg_padding_top + svg_padding_bot
 
-function build_time_table(aggregated) {
+function build_time_table(aggregated, agg_len) {
     document.getElementById("heatmap").innerHTML = ""
     const data = []
     let i = 0
     for (let time_frame of aggregated.order_of_time_frames) {
         data.push({
             "i": i,
-            "time_frame_center": new Date(aggregated[time_frame].time_frame_center),
+            "time_frame_center": new Date(time_frame),
             "time_frame_id": time_frame
         })
         i++;
@@ -57,19 +57,14 @@ function build_time_table(aggregated) {
         }
     }
 
-    // const y_labels = [
-    //     { "i": 0, "time_frame": "02:00-05:00" },
-    //     { "i": 1, "time_frame": "23:00-02:00" },
-    //     { "i": 2, "time_frame": "20:00-23:00" },
-    //     { "i": 3, "time_frame": "17:00-20:00" }
-    // ]
-    const y_labels = [
-        { "i": 0, "time": "05:00" },
-        { "i": 1, "time": "02:00" },
-        { "i": 2, "time": "23:00" },
-        { "i": 3, "time": "20:00" },
-        { "i": 4, "time": "17:00" }
-    ]
+
+    let y_labels = []
+    for (let i = 0; i < agg_len; i++) {
+        y_labels.push({ 'i': 5 - (i + 1), 'time': `${luxon.DateTime.fromISO(data[i].time_frame_id).minus({ 'hours': 1, 'minutes': 30 }).hour.toString().padStart(2, '0')}:00` })
+    }
+    y_labels.push({ 'i': 0, 'time': `${luxon.DateTime.fromISO(data[agg_len - 1].time_frame_id).plus({ 'hours': 1, 'minutes': 30 }).hour.toString().padStart(2, '0')}:00` })
+
+
 
     const cells = cells_group.selectAll('rect')
         .data(data)
@@ -170,15 +165,15 @@ function build_time_table(aggregated) {
     //     .attr('fill', 'CornflowerBlue')
     //     .attr("opacity", 1);
 
-    
+
 
     moonIconGroup.selectAll('tri')
         .data(data)
         .enter()
         .append('text')
-        .style('font-size', 'x-small')        
-        .style("filter", "grayscale(100%)")  
-        .attr('text-anchor', 'end')  
+        .style('font-size', 'x-small')
+        .style("filter", "grayscale(100%)")
+        .attr('text-anchor', 'end')
         .attr('transform', function (d) {
             if (aggregated[d.time_frame_id].cloudcover < 15 && aggregated[d.time_frame_id].moon.altitude > 0) {
                 let index;
@@ -201,9 +196,11 @@ function build_time_table(aggregated) {
                 return `translate(${x_cell_bot_right} ${y_cell_bot_right - 4})`
             }
         })
-        .text(function (d) { if (aggregated[d.time_frame_id].cloudcover < 15 && aggregated[d.time_frame_id].moon.altitude > 0) {
-            return get_moon_phase_emoji(aggregated[d.time_frame_id].moon.phase_angle)
-        } })
+        .text(function (d) {
+            if (aggregated[d.time_frame_id].cloudcover < 15 && aggregated[d.time_frame_id].moon.altitude > 0) {
+                return get_moon_phase_emoji(aggregated[d.time_frame_id].moon.phase_angle)
+            }
+        })
         .attr("opacity", 0.5);
 
 
@@ -313,7 +310,7 @@ function get_moon_phase_emoji(angle) {
         `\u{1f315}`, // Full Moon
         `\u{1f316}`, // Waning Gibbous Moon
         `\u{1f317}`, // Last Quarter Moon
-        `) \u{1f318}`, // Waning Crescent Moon
+        `\u{1f318}`, // Waning Crescent Moon
     ];
 
     // Calculate the moon phase index based on the angle
