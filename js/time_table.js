@@ -175,7 +175,7 @@ function build_time_table(aggregated, agg_len) {
         .style("filter", "grayscale(100%)")
         .attr('text-anchor', 'end')
         .attr('transform', function (d) {
-            if (aggregated[d.time_frame_id].cloudcover < 15 && aggregated[d.time_frame_id].moon.altitude > 0) {
+            if (aggregated[d.time_frame_id].moon.altitude > 0) {
                 let index;
                 for (let i in data) {
                     let item = data[i]
@@ -197,7 +197,7 @@ function build_time_table(aggregated, agg_len) {
             }
         })
         .text(function (d) {
-            if (aggregated[d.time_frame_id].cloudcover < 15 && aggregated[d.time_frame_id].moon.altitude > 0) {
+            if (aggregated[d.time_frame_id].moon.altitude > 0) {
                 return get_moon_phase_emoji(aggregated[d.time_frame_id].moon.phase_angle)
             }
         })
