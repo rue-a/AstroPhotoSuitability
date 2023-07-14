@@ -1,3 +1,12 @@
+
+async function get_meteo_data(lat, lon) {
+    const query = `https://api.open-meteo.com/v1/gfs?forecast_days=16&latitude=${lat}&longitude=${lon}&hourly=temperature_2m,cloudcover&timezone=auto`;
+    const response = await fetch(query)
+    const json = await response.json();
+    return json;
+
+}
+
 function load_marker_shape(url, properties) {
     const pin_div = document.createElement('div'); // Replace with your element ID
     fetch(url)
@@ -78,7 +87,6 @@ if (navigator.geolocation) {
                 center: [position.coords.longitude, position.coords.latitude],
                 zoom: 7
             });
-            // get_sample_time_table();
             get_meteo_data(position.coords.latitude, position.coords.longitude).then((meteo_data) => {
                 get_time_table(meteo_data)
             });
@@ -96,7 +104,6 @@ if (navigator.geolocation) {
 map.on('click', function (e) {
     marker.setLngLat(e.lngLat).addTo(map);
     // console.log();
-    // get_sample_time_table());
     get_meteo_data(e.lngLat.lat, e.lngLat.lng).then((meteo_data) => {
         get_time_table(meteo_data)
     });

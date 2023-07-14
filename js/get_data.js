@@ -1,70 +1,5 @@
+function aggregate_open_meteo(data, time_frame_len, time_frame_nb, offset) {
 
-
-async function get_meteo_data(lat, lon) {
-    const query = `https://api.open-meteo.com/v1/gfs?forecast_days=16&latitude=${lat}&longitude=${lon}&hourly=temperature_2m,cloudcover&timezone=auto`;
-    const response = await fetch(query)
-    const json = await response.json();
-    return json;
-
-}
-
-function get_mean(arr) {
-    /** calculates the mean value of an array of numbers.
-     * 
-     * @param {Array.<Number>} arr Array of values.
-     * 
-     * @returns {Number} The mean value.
-     */
-
-    let sum = 0;
-    for (val of arr) {
-        sum += val;
-    }
-    return sum / arr.length
-}
-
-function aggregate_values(arr, i, len) {
-    /** aggregates the values of a given subset of an array beginning at index i and ending at index i+len. 
-     *
-     * @param {Array.<Number>} arr Array with the parameter's values.
-     * @param {Number} i Integer that indicates where in the array the aggregation starts.
-     * @param {Number} len Integer that is used to identify the length of the sequence that is aggregated.
-     * 
-     * @returns {Number} Mean value of aggregated values.
-     */
-
-    return get_mean(arr.slice(i, i + len))
-}
-
-function aggregate_time_frame(data_hourly, i, len) {
-    /**
-     * 
-     */
-    return {
-        "temperatur_2m": aggregate_values(data_hourly.temperature_2m, i, len),
-        "cloudcover": aggregate_values(data_hourly.cloudcover, i, len)
-    }
-}
-
-async function load_timezone_ref(url) {
-    const response = await fetch(url)
-    const json = await response.json();
-    return json;
-}
-
-async function aggregate_meteo_data(data, agg_len) {
-    /** aggregates meteorological data into time frames of 
-     * four hours beginning at 17:00 and ending at 05:00
-     * 
-     * @param {Object} data API response from https://api.open-meteo.com/v1/
-     * 
-     * @returns {Object} An object with time frames as keys and some auxillary 
-     *  information, such as the time zone of the time frames and their order.
-     */
-    let datetime;
-    let night_date;
-    let day_counter = 0;
-    const order_of_keys = []
     const aggregated = {};
     aggregated.timezone = data.timezone
     aggregated.timezone_abbreviation = data.timezone_abbreviation
@@ -72,59 +7,42 @@ async function aggregate_meteo_data(data, agg_len) {
     aggregated.longitude = data.longitude
     aggregated.elevation = data.elevation
     aggregated.units = data.hourly_units
+    aggregated.time_frame_len = time_frame_len
+    aggregated.nb_of_timeframes_per_cycle = time_frame_nb
+    aggregated.offset = offset
+    aggregated.timeframes = []
     delete aggregated.units.time
-    for (let i in data.hourly.time) {
-        i = parseInt(i)
+    for (let hour = 0; hour < data.hourly.time.length; hour++) {
+        if (hour == offset) {
+            for (i = 0; i < time_frame_nb; i++) {
+                const time = luxon.DateTime.fromMillis(data.hourly.time.slice((hour + time_frame_len * i), (hour + time_frame_len * i) + time_frame_len).map(time_str => {
+                    return luxon.DateTime.fromISO(time_str, { 'zone': data.timezone }).plus({ 'minutes': 30 })
+                }).reduce((sum, date) => sum + date.toMillis(), 0) / time_frame_len).toISO()
+                const temperature = data.hourly.temperature_2m.slice((hour + time_frame_len * i), (hour + time_frame_len * i) + time_frame_len).reduce((sum, val) => sum + val, 0) / time_frame_len
+                const cloudcover = data.hourly.cloudcover.slice((hour + time_frame_len * i), (hour + time_frame_len * i) + time_frame_len).reduce((sum, val) => sum + val, 0) / time_frame_len
+                aggregated.timeframes.push({
+                    'time_frame_center': time,
+                    'temperatur_2m': temperature,
+                    'cloudcover': cloudcover
+                })
 
-        if (i != 0 && !(i % 24)) { day_counter++; }
-        let a = day_counter * 24;
-        datetime = new Date(data.hourly.time[i])
-        if (i - a == 12) {
-            // at 12 noon, switch to next day
-            // that means the night_date ist 12
-            // hours behind the 'normal' date
-            night_date = new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate())
-            night_date = night_date.toDateString()
+            }
+            offset = offset + 24
         }
-        if (i >= 12 && i < data.hourly.time.length - 12) {
-            // ignore first half night and last half night
-            let key = null;
-            let time = (new Date((new Date(data.hourly.time[i]).valueOf() + new Date(data.hourly.time[i + agg_len - 1]).valueOf()) / 2)).toISOString()
 
-            if (i - a == 17) {
-                key = time
-                aggregated[key] = aggregate_time_frame(data.hourly, i, agg_len)
-                aggregated[key].time_frame_center = time
-            }
-            if (i - a == 20) {
-                key = time
-                aggregated[key] = aggregate_time_frame(data.hourly, i, agg_len)
-                aggregated[key].time_frame_center = time
-            }
-            if (i - a == 23) {
-                key = time
-                aggregated[key] = aggregate_time_frame(data.hourly, i, agg_len)
-                aggregated[key].time_frame_center = time
-            }
-            if (i - a == 2) {
-                key = time
-                aggregated[key] = aggregate_time_frame(data.hourly, i, agg_len)
-                aggregated[key].time_frame_center = time
-            }
-            if (key) { order_of_keys.push(key) }
-        }
-        aggregated.order_of_time_frames = order_of_keys
     }
-    console.log(aggregated)
+    if (offset + time_frame_len * time_frame_nb > 23) {
+        aggregated.timeframes = aggregated.timeframes.slice(0, aggregated.timeframes.length - time_frame_nb)
+    }
     return aggregated
 }
+
 
 function astro_enrich_time_frame(time_frame, observer) {
     /** Enriches a time frame object that contains a time_frame_center
      * with astronomical data, depending on the observer position. 
      */
     const date = new Date(time_frame.time_frame_center);
-    // console.log(date)
     const dDate = (new Date(date))
     dDate.setMinutes(date.getMinutes() + 1)
 
@@ -162,16 +80,16 @@ function astro_enrich_time_frame(time_frame, observer) {
 
 
 function calc_sun_altitude_suit(sun_altitude) {
-    /** calculates suitability of atro-photography in regard to the sun's altitude.
+    /** calculates suitability of astro-photography in regard to the sun's altitude.
      * The sun's azimut is given given as angle (-180--+180), where negative degrees
-     * indicate that the sun's position is below the horzion.
+     * indicate that the sun's position is below the horizon.
      * 
      * Civil twilight: sun is 0 to 6 degree below horizon.
      * Nautical twilight: sun is 6 to 12 degree below horizon.
      * Astronomical twilight: sun is 12 to 18 degree below horizon.
      * Night: sun is > 18 degree below horizon.
      * 
-     * @param {number} sun_altitude Value in the intervall (-180, 180].
+     * @param {number} sun_altitude Value in the interval (-180, 180].
      * 
      * @returns {number} value between 0 and 1 where 0 means not suitable and 1
      * means very suitable.
@@ -254,34 +172,23 @@ function calculate_suitability(time_frame) {
     return time_frame
 }
 
-function get_sample_time_table() {
-    const aggregated = aggregate_meteo_data(sample_meteo_response);
-    let observer = new Astronomy.Observer(aggregated.latitude, aggregated.longitude, aggregated.elevation);
-    for (let time_frame of aggregated.order_of_time_frames) {
-        aggregated[time_frame] = astro_enrich_time_frame(aggregated[time_frame], observer)
-    }
-
-    for (let time_frame of aggregated.order_of_time_frames) {
-        aggregated[time_frame] = calculate_suitability(aggregated[time_frame])
-    }
-    build_time_table(aggregated)
-}
-
-
-
-// console.log(aggregated)
 
 async function get_time_table(meteo_data) {
-    let agg_len = 4
-    const aggregated = await aggregate_meteo_data(meteo_data, agg_len);
+
+    const aggregated = await aggregate_open_meteo(
+        data = meteo_data,
+        time_frame_len = 3,
+        time_frame_nb = 4,
+        offset = 17
+    );
     let observer = new Astronomy.Observer(aggregated.latitude, aggregated.longitude, aggregated.elevation);
-    for (let time_frame of aggregated.order_of_time_frames) {
-        aggregated[time_frame] = astro_enrich_time_frame(aggregated[time_frame], observer)
+    for (let timeframe of aggregated.timeframes) {
+        timeframe = astro_enrich_time_frame(timeframe, observer)
     }
 
-    for (let time_frame of aggregated.order_of_time_frames) {
-        aggregated[time_frame] = calculate_suitability(aggregated[time_frame])
+    for (let timeframe of aggregated.timeframes) {
+        time_frame = calculate_suitability(timeframe)
     }
-    build_time_table(aggregated, agg_len)
+    build_time_table(aggregated)
 }
 

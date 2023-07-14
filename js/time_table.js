@@ -11,20 +11,14 @@ const width = (cellSize + cellPadding) * 15 + cellPadding + time_label_hor_space
 // + 120 is the height of the date sting on the bottom
 const height = (cellSize + cellPadding) * 4 + cellPadding + date_label_vert_space + svg_padding_top + svg_padding_bot
 
-function build_time_table(aggregated, agg_len) {
+function build_time_table(aggregated) {
     document.getElementById("heatmap").innerHTML = ""
-    const data = []
-    let i = 0
-    for (let time_frame of aggregated.order_of_time_frames) {
-        data.push({
-            "i": i,
-            "time_frame_center": new Date(time_frame),
-            "time_frame_id": time_frame
-        })
-        i++;
-    }
+    const data = aggregated.timeframes.map((timeframe, index) => {
+        timeframe.time_frame_center = luxon.DateTime.fromISO(timeframe.time_frame_center)
+        timeframe.index = index
+        return timeframe
+    })
 
-    // console.log(data)
 
     const svg = d3.select('#heatmap')
         .append('svg')
@@ -46,24 +40,18 @@ function build_time_table(aggregated, agg_len) {
         .interpolate(d3.interpolateRgb);
 
 
-    // without setting the hours of the first date to zero, the date would get skipped (
-    // probably because it's after 12 o'clock or so).
-    const x_labels = d3.timeDays(new Date(data[0].time_frame_center).setHours(0, 0, 0, 0), new Date(data[data.length - 1].time_frame_center));
-    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    for (let i in x_labels) {
-        x_labels[i] = {
-            'i': i,
-            'day': `${weekdays[x_labels[i].getDay()]} ${('0' + x_labels[i].getDate()).slice(-2)}.${('0' + (x_labels[i].getMonth() + 1)).slice(-2)}.${x_labels[i].getFullYear()}`
-        }
-    }
+    const x_labels = [...new Set(data.map(data => {
+        return data.time_frame_center.toFormat('EEE, MMM dd');
+    }))].map((label, index) => {
+        return { 'i': index, 'label': label }
+    })
 
 
     let y_labels = []
-    for (let i = 0; i < agg_len; i++) {
-        y_labels.push({ 'i': 5 - (i + 1), 'time': `${luxon.DateTime.fromISO(data[i].time_frame_id).minus({ 'hours': 1, 'minutes': 30 }).hour.toString().padStart(2, '0')}:00` })
+    for (let i = 0; i < aggregated.nb_of_timeframes_per_cycle; i++) {
+        y_labels.push({ 'i': aggregated.nb_of_timeframes_per_cycle - i, 'time': `${data[i].time_frame_center.minus({ 'hours': 1, 'minutes': 30 }).hour.toString().padStart(2, '0')}:00` })
     }
-    y_labels.push({ 'i': 0, 'time': `${luxon.DateTime.fromISO(data[agg_len - 1].time_frame_id).plus({ 'hours': 1, 'minutes': 30 }).hour.toString().padStart(2, '0')}:00` })
-
+    y_labels.push({ 'i': 0, 'time': `${data[aggregated.nb_of_timeframes_per_cycle - 1].time_frame_center.plus({ 'hours': 1, 'minutes': 30 }).hour.toString().padStart(2, '0')}:00` })
 
 
     const cells = cells_group.selectAll('rect')
@@ -73,11 +61,11 @@ function build_time_table(aggregated, agg_len) {
         .attr('width', cellSize)
         .attr('height', cellSize)
         .attr('x', function (d) {
-            const col = Math.floor(d.i / 4)
+            const col = Math.floor(d.index / 4)
             return col * (cellSize + cellPadding);
         })
         .attr('y', function (d) {
-            const hour = d.time_frame_center.getHours()
+            const hour = d.time_frame_center.hour
             let row;
             if (hour == 18) { row = 3 }
             if (hour == 21) { row = 2 }
@@ -86,7 +74,7 @@ function build_time_table(aggregated, agg_len) {
             return (row) * (cellSize + cellPadding);
         })
         .attr('fill', function (d) {
-            return d ? colorScale(aggregated[d.time_frame_id].suit.overall) : '#eee';
+            return d ? colorScale(d.suit.overall) : '#eee';
         })
 
     const transparent_cells = transparent_cells_group.selectAll('.transparent-rect')
@@ -96,11 +84,11 @@ function build_time_table(aggregated, agg_len) {
         .attr('width', cellSize)
         .attr('height', cellSize)
         .attr('x', function (d) {
-            const col = Math.floor(d.i / 4)
+            const col = Math.floor(d.index / 4)
             return col * (cellSize + cellPadding);
         })
         .attr('y', function (d) {
-            const hour = d.time_frame_center.getHours()
+            const hour = d.time_frame_center.hour
             let row;
             if (hour == 18) { row = 3 }
             if (hour == 21) { row = 2 }
@@ -117,7 +105,7 @@ function build_time_table(aggregated, agg_len) {
             .attr("fill", "LemonChiffon")
             .attr("opacity", 0.5);
         tooltip.style("visibility", "visible")
-            .html(build_tooltip(aggregated[d.time_frame_id]))
+            .html(build_tooltip(d, aggregated.time_frame_len, aggregated.timezone_abbreviation))
             .style("top", (event.pageY - 10) + "px")
             .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
     }).on("mouseout", function (event, d) {
@@ -127,44 +115,6 @@ function build_time_table(aggregated, agg_len) {
     }).on("click", function (event, d) {
         show_detailed_info(d);
     });
-    // make tooltip move with mouse
-    // .on("mousemove", function (event, d) {
-    //     tooltip.style("top", (event.pageY - 10) + "px")
-    //         .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
-    // })
-    // Add mouseout event listener
-
-    // make triagles bottem right if CC is low
-    // triangleGroup.selectAll('tri')
-    //     .data(data)
-    //     .enter()
-    //     .append('polyline')
-    //     // .attr('width', cellSize)
-    //     // .attr('height', cellSize)
-    //     .attr('points', function (d) {
-    //         if (aggregated[d.time_frame_id].cloudcover < 15) {
-    //             let index;
-    //             for (let i in data) {
-    //                 let item = data[i]
-    //                 if (item.time_frame_center == d.time_frame_center) { index = i }
-    //             }
-    //             const col = Math.floor(index / 4)
-    //             const x_cell_bot_right = col * (cellSize + cellPadding) + cellSize;
-
-    //             const hour = d.time_frame_center.getHours()
-    //             let row;
-    //             if (hour == 18) { row = 3 }
-    //             if (hour == 21) { row = 2 }
-    //             if (hour == 0) { row = 1 }
-    //             if (hour == 3) { row = 0 }
-    //             const y_cell_bot_right = (row) * (cellSize + cellPadding) + cellSize;
-
-    //             return `${x_cell_bot_right} ${y_cell_bot_right} ${x_cell_bot_right - cellSize / 5} ${y_cell_bot_right} ${x_cell_bot_right} ${y_cell_bot_right - cellSize / 5}`
-    //         }
-    //     })
-    //     .attr('fill', 'CornflowerBlue')
-    //     .attr("opacity", 1);
-
 
 
     moonIconGroup.selectAll('tri')
@@ -175,7 +125,7 @@ function build_time_table(aggregated, agg_len) {
         .style("filter", "grayscale(100%)")
         .attr('text-anchor', 'end')
         .attr('transform', function (d) {
-            if (aggregated[d.time_frame_id].moon.altitude > 0) {
+            if (d.moon.altitude > 0) {
                 let index;
                 for (let i in data) {
                     let item = data[i]
@@ -184,7 +134,7 @@ function build_time_table(aggregated, agg_len) {
                 const col = Math.floor(index / 4)
                 const x_cell_bot_right = col * (cellSize + cellPadding) + cellSize;
 
-                const hour = d.time_frame_center.getHours()
+                const hour = d.time_frame_center.hour
                 let row;
                 if (hour == 18) { row = 3 }
                 if (hour == 21) { row = 2 }
@@ -197,8 +147,8 @@ function build_time_table(aggregated, agg_len) {
             }
         })
         .text(function (d) {
-            if (aggregated[d.time_frame_id].moon.altitude > 0) {
-                return get_moon_phase_emoji(aggregated[d.time_frame_id].moon.phase_angle)
+            if (d.moon.altitude > 0) {
+                return get_moon_phase_emoji(d.moon.phase_angle)
             }
         })
         .attr("opacity", 0.5);
@@ -246,7 +196,7 @@ function build_time_table(aggregated, agg_len) {
             let y = 4 * (cellSize + cellPadding) + svg_padding_top + 10;
             return `translate(${x} ${y}) rotate(-75)`;
         })
-        .text(function (d) { return d.day });
+        .text(function (d) { return d.label });
 
 }
 
@@ -371,13 +321,15 @@ function get_sun_alt_info_str(angle, rising) {
     return stage
 }
 
-function build_tooltip(time_frame) {
-    tooltip = `<b>${time_frame.time_frame_center.toLocaleString().slice(0, -3)} ± 1:30</b> <br>                
-        Moon altitude: ${get_moon_alt_info_str(time_frame.moon.altitude, time_frame.moon.rising)} <br>
-        Sun altitude: ${get_sun_alt_info_str(time_frame.sun.altitude, time_frame.sun.rising)} <br>
-        Moon phase: ${get_moon_phase_info_str(time_frame.moon.phase_angle)} <br>
-        Sky: ${get_cloudcover_info_str(time_frame.cloudcover)} <br>
-        <u>Suitability: ${(time_frame.suit.overall * 100).toFixed()} %</u>`
+function build_tooltip(timeframe, time_frame_len_hours, timezone) {
+    const time_frame_begin = timeframe.time_frame_center.minus({ 'hours': time_frame_len_hours / 2 })
+    const time_frame_end = timeframe.time_frame_center.plus({ 'hours': time_frame_len_hours / 2 })
+    tooltip = `<b>${time_frame_begin.toFormat('MMMdd HH:mm')} — ${time_frame_end.toFormat('MMMdd HH:mm')} (${timezone})</b> <br>                
+        Moon altitude: ${get_moon_alt_info_str(timeframe.moon.altitude, timeframe.moon.rising)} <br>
+        Sun altitude: ${get_sun_alt_info_str(timeframe.sun.altitude, timeframe.sun.rising)} <br>
+        Moon phase: ${get_moon_phase_info_str(timeframe.moon.phase_angle)} <br>
+        Sky: ${get_cloudcover_info_str(timeframe.cloudcover)} <br>
+        <u>Suitability: ${(timeframe.suit.overall * 100).toFixed()} %</u>`
     return tooltip;
 }
 
