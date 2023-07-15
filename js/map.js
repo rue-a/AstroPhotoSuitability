@@ -1,11 +1,4 @@
 
-async function get_meteo_data(lat, lon) {
-    const query = `https://api.open-meteo.com/v1/gfs?forecast_days=16&latitude=${lat}&longitude=${lon}&hourly=temperature_2m,cloudcover&timezone=auto`;
-    const response = await fetch(query)
-    const json = await response.json();
-    return json;
-
-}
 
 function load_marker_shape(url, properties) {
     const pin_div = document.createElement('div'); // Replace with your element ID
@@ -81,16 +74,15 @@ if (navigator.geolocation) {
 
         (position) => {
             // set the marker's location to the user's current position
-            position.coords.latitude = 48.84318062931541
-            position.coords.longitude = 23.410364108949416
             marker.setLngLat([position.coords.longitude, position.coords.latitude]).addTo(map);
             map.jumpTo({
                 center: [position.coords.longitude, position.coords.latitude],
                 zoom: 7
             });
-            get_meteo_data(position.coords.latitude, position.coords.longitude).then((meteo_data) => {
-                get_time_table(meteo_data)
-            });
+            // get_meteo_data(position.coords.latitude, position.coords.longitude).then((meteo_data) => {
+            //     get_time_table(meteo_data)
+            // });
+            get_time_table(ex_data)
         },
         (error) => {
             console.log(`Error getting location: ${error.message}`);
@@ -101,29 +93,16 @@ if (navigator.geolocation) {
     console.log('Geolocation is not supported by this browser.');
 }
 
-// pos_lat = 48.84318062931541
-// pos_lon = 23.410364108949416
-// marker.setLngLat([pos_lon, pos_lat]).addTo(map);
-// map.jumpTo({
-//     center: [pos_lon, pos_lat],
-//     zoom: 7
-// });
-// get_meteo_data(pos_lat, pos_lon).then((meteo_data) => {
-//     get_time_table(meteo_data)
-// });
-
-// (error) => {
-//     console.log(`Error getting location: ${error.message}`);
-// }
 
 
 
 map.on('click', function (e) {
     marker.setLngLat(e.lngLat).addTo(map);
     // console.log();
-    get_meteo_data(e.lngLat.lat, e.lngLat.lng).then((meteo_data) => {
-        get_time_table(meteo_data)
-    });
+    // get_meteo_data(e.lngLat.lat, e.lngLat.lng).then((meteo_data) => {
+    //     get_time_table(meteo_data)
+    // });
+    get_time_table(ex_data)
 });
 
 

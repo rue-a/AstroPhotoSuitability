@@ -11,6 +11,9 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
     <script src="libraries/js/astronomy.browser.js"></script>
+    <script src="js/aggregate_data.js"></script>
+    <script src="js/build_time_table.js"></script>
+    <script src="js/build_sky_map.js"></script>
 
     <meta charset="utf-8" />
     <title>astro_photo_suitability</title>
@@ -32,18 +35,12 @@
             <div id="current_time"></div>
             <script src="js/map.js"></script>
         </div>
-        <div id="heatmap" class="row justify-content-center">
-            <script src="js/time_table.js"></script>
-            <script src="js/get_data.js"></script>
-
-        </div>
+        <div id="heatmap" class="row justify-content-center"></div>
+        <div id="skymap" class="row justify-content-center"></div>
         <div class="row footer">
-
-
             <a href="https://github.com/rue-a/AstroPhotoSuitability">https://github.com/rue-a/AstroPhotoSuitability</a>
-            </p>
         </div>
-    </div>
+
 </body>
 
 </html>

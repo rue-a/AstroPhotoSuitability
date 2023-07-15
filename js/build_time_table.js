@@ -11,6 +11,9 @@ const width = (cellSize + cellPadding) * 15 + cellPadding + time_label_hor_space
 // + 120 is the height of the date sting on the bottom
 const height = (cellSize + cellPadding) * 4 + cellPadding + date_label_vert_space + svg_padding_top + svg_padding_bot
 
+
+
+
 function build_time_table(aggregated) {
     document.getElementById("heatmap").innerHTML = ""
     const data = aggregated.timeframes.map((timeframe, index) => {
@@ -31,8 +34,6 @@ function build_time_table(aggregated) {
     // const triangleGroup = svg.append('g')
     //     .attr('transform', `translate(${svg_padding_left + time_label_hor_space}, ${svg_padding_top})`)
     const moonIconGroup = svg.append('g')
-        .attr('transform', `translate(${svg_padding_left + time_label_hor_space}, ${svg_padding_top})`)
-    const transparent_cells_group = svg.append('g')
         .attr('transform', `translate(${svg_padding_left + time_label_hor_space}, ${svg_padding_top})`)
     const colorScale = d3.scaleLinear()
         .domain([0, 1]) // Set the input domain
@@ -96,7 +97,7 @@ function build_time_table(aggregated) {
             d3.select(this)
                 .attr('stroke', "tomato")
 
-            show_detailed_info(d);
+            build_sky_map(d.time_frame_center.toISO(), aggregated.latitude, aggregated.longitude, aggregated.elevation);
         })
 
 
@@ -106,7 +107,7 @@ function build_time_table(aggregated) {
         .enter()
         .append('text')
         .style('font-size', 'x-small')
-        .style("filter", "grayscale(100%)")
+        // .style("filter", "grayscale(100%)")
         .attr('text-anchor', 'end')
         .attr('transform', function (d) {
             if (d.moon.altitude > 0) {
@@ -127,14 +128,15 @@ function build_time_table(aggregated) {
                 const y_cell_bot_right = (row) * (cellSize + cellPadding) + cellSize;
 
                 // -4 because the moon emoji hangs below the baseline
-                return `translate(${x_cell_bot_right} ${y_cell_bot_right - 4})`
+                return `translate(${x_cell_bot_right - 1} ${y_cell_bot_right - 3})`
             }
         })
         .text(function (d) {
             if (d.moon.altitude > 0) {
-                return get_moon_phase_emoji(d.moon.phase_angle)
+                return get_moon_phase_symbol(d.moon.phase_angle)
             }
         })
+        .attr('font-family', 'Consolas')
         .attr("opacity", 0.5);
 
 
@@ -210,14 +212,14 @@ function get_moon_phase_info_str(angle) {
      * @returns {String} An informational string containing a moon emoji.
      */
     const strings = [
-        `New Moon (${angle.toFixed()}°) \u{1f311}`, // New Moon
-        `Waxing Crescent Moon (${angle.toFixed()}°) \u{1f312}`, // Waxing Crescent Moon
-        `First Quarter Moon (${angle.toFixed()}°) \u{1f313}`, // First Quarter Moon
-        `Waxing Gibbous Moon (${angle.toFixed()}°) \u{1f314}`, // Waxing Gibbous Moon
-        `Full Moon (${angle.toFixed()}°) \u{1f315}`, // Full Moon
-        `Waning Gibbous Moon (${angle.toFixed()}°) \u{1f316}`, // Waning Gibbous Moon
-        `Last Quarter Moon (${angle.toFixed()}°) \u{1f317}`, // Last Quarter Moon
-        `Waning Crescent Moon  (${angle.toFixed()}°) \u{1f318}`, // Waning Crescent Moon
+        `New Moon (${angle.toFixed()}°) 🌑︎`, // New Moon
+        `Waxing Crescent Moon (${angle.toFixed()}°) 🌒︎`, // Waxing Crescent Moon
+        `First Quarter Moon (${angle.toFixed()}°) 🌓︎`, // First Quarter Moon
+        `Waxing Gibbous Moon (${angle.toFixed()}°) 🌔︎`, // Waxing Gibbous Moon
+        `Full Moon (${angle.toFixed()}°) 🌕︎`, // Full Moon
+        `Waning Gibbous Moon (${angle.toFixed()}°) 🌖︎`, // Waning Gibbous Moon
+        `Last Quarter Moon (${angle.toFixed()}°) 🌗︎`, // Last Quarter Moon
+        `Waning Crescent Moon  (${angle.toFixed()}°) 🌘︎`, // Waning Crescent Moon
     ];
 
     // Calculate the moon phase index based on the angle
@@ -227,7 +229,7 @@ function get_moon_phase_info_str(angle) {
     return strings[phase_index];
 }
 
-function get_moon_phase_emoji(angle) {
+function get_moon_phase_symbol(angle) {
     /** Builds an informational string about the moon phase
      * from the given moon phase angle.
      * 
@@ -237,14 +239,14 @@ function get_moon_phase_emoji(angle) {
      * @returns {String} An informational string containing a moon emoji.
      */
     const strings = [
-        `\u{1f311}`, // New Moon
-        `\u{1f312}`, // Waxing Crescent Moon
-        `\u{1f313}`, // First Quarter Moon
-        `\u{1f314}`, // Waxing Gibbous Moon
-        `\u{1f315}`, // Full Moon
-        `\u{1f316}`, // Waning Gibbous Moon
-        `\u{1f317}`, // Last Quarter Moon
-        `\u{1f318}`, // Waning Crescent Moon
+        `🌑︎`, // New Moon
+        `🌒︎`, // Waxing Crescent Moon
+        `🌓︎`, // First Quarter Moon
+        `🌔︎`, // Waxing Gibbous Moon
+        `🌕︎`, // Full Moon
+        `🌖︎`, // Waning Gibbous Moon
+        `🌗︎`, // Last Quarter Moon
+        `🌘︎`, // Waning Crescent Moon
     ];
 
     // Calculate the moon phase index based on the angle
@@ -259,7 +261,7 @@ function get_moon_alt_info_str(angle, rising) {
      * from the given moon altitude angle.
      * 
      * @param {number} angle The angle of the moon altitude (-180 to 180), 
-     * negative values indication moon poistion below horizon
+     * negative values indication moon position below horizon
      * @param {number} rising Boolean that indicates if the moon is rising.
      * 
      * @returns {String} An informational string.
@@ -284,7 +286,7 @@ function get_sun_alt_info_str(angle, rising) {
      * from the given sun altitude angle.
      * 
      * @param {number} angle The angle of the sun altitude (-180 to 180), 
-     * negative values indication sun poistion below horizon
+     * negative values indication sun position below horizon
      * @param {number} rising Boolean that indicates if the sun is rising.
      * 
      * @returns {String} An informational string.
@@ -308,18 +310,18 @@ function get_sun_alt_info_str(angle, rising) {
 function build_tooltip(timeframe, time_frame_len_hours, timezone) {
     const time_frame_begin = timeframe.time_frame_center.minus({ 'hours': time_frame_len_hours / 2 })
     const time_frame_end = timeframe.time_frame_center.plus({ 'hours': time_frame_len_hours / 2 })
-    tooltip = `<b>${time_frame_begin.toFormat('MMMdd HH:mm')} — ${time_frame_end.toFormat('MMMdd HH:mm')} (${timezone})</b> <br>                
+    tooltip = `<b>${time_frame_begin.toFormat('MMMdd HH:mm')} — ${time_frame_end.toFormat('MMMdd HH:mm')} (${timezone})</b> <br>
+        Temperature: ${timeframe.temperature_2m.toFixed(2)} °C <br>
+        <br>                
         Moon altitude: ${get_moon_alt_info_str(timeframe.moon.altitude, timeframe.moon.rising)} <br>
         Sun altitude: ${get_sun_alt_info_str(timeframe.sun.altitude, timeframe.sun.rising)} <br>
         Moon phase: ${get_moon_phase_info_str(timeframe.moon.phase_angle)} <br>
         Sky: ${get_cloudcover_info_str(timeframe.cloudcover)} <br>
-        <u>Suitability: ${(timeframe.suit.overall * 100).toFixed()} %</u>`
+        <u><b>Suitability: ${(timeframe.suit.overall * 100).toFixed()} %</u></b><br>`
+
     return tooltip;
 }
 
-function show_detailed_info(d) {
-    console.log(d)
-}
 
 
 
