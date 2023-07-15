@@ -14,7 +14,7 @@ const height = (cellSize + cellPadding) * 4 + cellPadding + date_label_vert_spac
 function build_time_table(aggregated) {
     document.getElementById("heatmap").innerHTML = ""
     const data = aggregated.timeframes.map((timeframe, index) => {
-        timeframe.time_frame_center = luxon.DateTime.fromISO(timeframe.time_frame_center)
+        timeframe.time_frame_center = luxon.DateTime.fromISO(timeframe.time_frame_center).setZone(aggregated.timezone)
         timeframe.index = index
         return timeframe
     })
@@ -76,45 +76,29 @@ function build_time_table(aggregated) {
         .attr('fill', function (d) {
             return d ? colorScale(d.suit.overall) : '#eee';
         })
+        .on("mouseover", function (event, d) {
+            d3.select(this)
+                .attr("fill", "LemonChiffon")
+            tooltip.style("visibility", "visible")
+                .html(build_tooltip(d, aggregated.time_frame_len, aggregated.timezone_abbreviation))
+                .style("top", (event.pageY - 10) + "px")
+                .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
+        }).on("mouseout", function (event, d) {
+            // Hide the transparent rectangle
+            d3.select(this).attr('fill', function (d) {
+                return d ? colorScale(d.suit.overall) : '#eee';
+            })
+            tooltip.style("visibility", "hidden"); // Hide the tooltip
 
-    const transparent_cells = transparent_cells_group.selectAll('.transparent-rect')
-        .data(data)
-        .enter()
-        .append('rect')
-        .attr('width', cellSize)
-        .attr('height', cellSize)
-        .attr('x', function (d) {
-            const col = Math.floor(d.index / 4)
-            return col * (cellSize + cellPadding);
         })
-        .attr('y', function (d) {
-            const hour = d.time_frame_center.hour
-            let row;
-            if (hour == 18) { row = 3 }
-            if (hour == 21) { row = 2 }
-            if (hour == 0) { row = 1 }
-            if (hour == 3) { row = 0 }
-            return (row) * (cellSize + cellPadding);
+        .on("click", function (event, d) {
+            cells_group.selectAll('rect').attr('stroke', null)
+            d3.select(this)
+                .attr('stroke', "tomato")
+
+            show_detailed_info(d);
         })
-        .attr("opacity", 0);
-    // .attr("pointer-events", "none") // make the transparent rectangles ignore mouse events
 
-
-    transparent_cells.on("mouseover", function (event, d) {
-        d3.select(this)
-            .attr("fill", "LemonChiffon")
-            .attr("opacity", 0.5);
-        tooltip.style("visibility", "visible")
-            .html(build_tooltip(d, aggregated.time_frame_len, aggregated.timezone_abbreviation))
-            .style("top", (event.pageY - 10) + "px")
-            .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
-    }).on("mouseout", function (event, d) {
-        // Hide the transparent rectangle
-        d3.select(this).attr("opacity", 0);
-        tooltip.style("visibility", "hidden"); // Hide the tooltip
-    }).on("click", function (event, d) {
-        show_detailed_info(d);
-    });
 
 
     moonIconGroup.selectAll('tri')

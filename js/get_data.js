@@ -1,5 +1,6 @@
 function aggregate_open_meteo(data, time_frame_len, time_frame_nb, offset) {
 
+
     const aggregated = {};
     aggregated.timezone = data.timezone
     aggregated.timezone_abbreviation = data.timezone_abbreviation

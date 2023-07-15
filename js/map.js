@@ -80,8 +80,9 @@ if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
 
         (position) => {
-            console.log(position)
             // set the marker's location to the user's current position
+            position.coords.latitude = 48.84318062931541
+            position.coords.longitude = 23.410364108949416
             marker.setLngLat([position.coords.longitude, position.coords.latitude]).addTo(map);
             map.jumpTo({
                 center: [position.coords.longitude, position.coords.latitude],
@@ -99,6 +100,22 @@ if (navigator.geolocation) {
 } else {
     console.log('Geolocation is not supported by this browser.');
 }
+
+// pos_lat = 48.84318062931541
+// pos_lon = 23.410364108949416
+// marker.setLngLat([pos_lon, pos_lat]).addTo(map);
+// map.jumpTo({
+//     center: [pos_lon, pos_lat],
+//     zoom: 7
+// });
+// get_meteo_data(pos_lat, pos_lon).then((meteo_data) => {
+//     get_time_table(meteo_data)
+// });
+
+// (error) => {
+//     console.log(`Error getting location: ${error.message}`);
+// }
+
 
 
 map.on('click', function (e) {
