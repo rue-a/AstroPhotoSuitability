@@ -29,7 +29,7 @@ function build_sky_map(datetime, lat, lon, alt) {
     const astro_data = [];
     const interval = 20;
     const duration = 8;
-    const startTime = luxon.DateTime.fromISO(datetime).minus({ hours: duration });
+    const startTime = luxon.DateTime.fromISO(datetime).minus({ hours: duration / 2 });
 
     for (let i = 0; i <= duration * 60 / interval; i++) {
         const timestamp = startTime.plus({ 'minutes': interval * i }).toISO();
@@ -146,36 +146,44 @@ function build_sky_map(datetime, lat, lon, alt) {
 
     // Define the range for radius (r) and angle (phi)
     const radiusScale = d3.scaleLinear()
-        .domain([-90, 90]) // Range for r
+        .domain([90, -90]) // Range for r
         // scaling with 1.8 as factor "zooms in"; we're not interested what happens at daytime
         .range([0, Math.min(width * 1.8, height * 1.8) / 2]); // Output range for radius
 
     const angleScale = d3.scaleLinear()
         .domain([0, 360]) // Range for phi
-        .range([+Math.PI / 2, -3 / 2 * Math.PI]); // Output range for angle
+        .range([-Math.PI / 2, 3 / 2 * Math.PI]); // Output range for angle
 
     // Create a group element to hold the circular graph elements
     const graph = svg.append("g")
         .attr("transform", `translate(${centerX}, ${centerY})`); // Position the graph at the center of the SVG
 
+
+    // draw dusk/dawn circle
+    graph.append("circle")
+        .attr("cx", radiusScale(90))
+        .attr("cy", radiusScale(90))
+        .attr("r", radiusScale(-9)) // Set the radius of each point
+        .style("fill", "#1A5276")
+        .style("stroke", "none");
     // draw night/day circle
     graph.append("circle")
-        .attr("cx", radiusScale(-90))
-        .attr("cy", radiusScale(-90))
+        .attr("cx", radiusScale(90))
+        .attr("cy", radiusScale(90))
         .attr("r", radiusScale(0)) // Set the radius of each point
         .style("fill", "#2C3E50")
         .style("stroke", "none");
 
-    // draw -45 degree circle
-    graph.selectAll('circle')
-        .data([-90, -75, -60, -45, -30, -15, 0])
+    // draw orientation circles
+    graph.selectAll('orientation-circles')
+        .data([90, 80, 70, 60, 50, 40, 30, 20, 10])
         .enter()
         .append("circle")
-        .attr("cx", radiusScale(-90))
-        .attr("cy", radiusScale(-90))
+        .attr("cx", radiusScale(90))
+        .attr("cy", radiusScale(90))
         .attr("r", (d) => radiusScale(d)) // Set the radius of each point
         .style("fill", "none")
-        .style("stroke", "#566573");
+        .style("stroke", "#364456");
 
     graph.selectAll("line")
         .data([0, 45, 90, 135, 180, 225, 270, 315]) // Specify the radius values
@@ -183,10 +191,35 @@ function build_sky_map(datetime, lat, lon, alt) {
         .append("line")
         .attr("x1", 0) // Starting point at the center
         .attr("y1", 0) // Starting point at the center
-        .attr("x2", (d) => radiusScale(0) * Math.cos(angleScale(d))) // Ending point at the circumference using r and phi
-        .attr("y2", (d) => radiusScale(0) * Math.sin(angleScale(d))) // Ending point at the circumference using r and phi
-        .style("stroke", "#566573"); // Set the line color
+        .attr("x2", (d) => radiusScale(-12) * Math.cos(angleScale(d))) // Ending point at the circumference using r and phi
+        .attr("y2", (d) => radiusScale(-12) * Math.sin(angleScale(d))) // Ending point at the circumference using r and phi
+        .style("stroke", "#364456"); // Set the line color
 
+    // Create the tooltip element
+    const tooltip = d3.select("body")
+        .append("div")
+        .attr("class", "hovertip")
+        .style("position", "absolute")
+        .style("background-color", "white")
+        .style("border", "1px solid black")
+        .style("padding", "5px")
+        .style("margin", "5px")
+        .style("visibility", "hidden")
+        .style("width", "auto")
+        .style('font-family', 'Consolas')
+        .style('font-size', 'x-small')
+    // .style("white-space", "nowrap");
+    function build_past_tooltip(data) {
+        return `Past path of ${data.label}`
+    }
+    function build_future_tooltip(data) {
+        return `Future path of ${data.label}`
+    }
+    function build_astro_obj_tooltip(data) {
+        return `<b>${data.label} (${data.symbol})</b><br>
+            Azimuth: ${data.azimuth.toFixed(2)}<br>
+            Altitude: ${data.altitude.toFixed(2)}`
+    }
 
     object_ids = Object.keys(astro_data[0]).filter((item) => item !== 'time');
     object_ids.forEach((id) => {
@@ -204,16 +237,15 @@ function build_sky_map(datetime, lat, lon, alt) {
                 d3.select(this)
                     .attr("opacity", 1)
                     .attr("stroke-width", 3)
-                // tooltip.style("visibility", "visible")
-                //     .html(build_tooltip(d, aggregated.time_frame_len, aggregated.timezone_abbreviation))
-                //     .style("top", (event.pageY - 10) + "px")
-                //     .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
+                tooltip.style("visibility", "visible")
+                    .html(build_past_tooltip(d[0][id]))
+                    .style("top", (event.pageY - 10) + "px")
+                    .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
             }).on("mouseout", function (event, d) {
-                // Hide the transparent rectangle
                 d3.select(this)
                     .attr('opacity', 0.3)
                     .attr("stroke-width", 2)
-                // tooltip.style("visibility", "hidden"); // Hide the tooltip
+                tooltip.style("visibility", "hidden"); // Hide the tooltip
 
             })
         graph.append("path")
@@ -228,21 +260,20 @@ function build_sky_map(datetime, lat, lon, alt) {
                 d3.select(this)
                     .attr("opacity", 1)
                     .attr("stroke-width", 3)
-                // tooltip.style("visibility", "visible")
-                //     .html(build_tooltip(d, aggregated.time_frame_len, aggregated.timezone_abbreviation))
-                //     .style("top", (event.pageY - 10) + "px")
-                //     .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
+                tooltip.style("visibility", "visible")
+                    .html(build_future_tooltip(d[0][id]))
+                    .style("top", (event.pageY - 10) + "px")
+                    .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
             }).on("mouseout", function (event, d) {
-                // Hide the transparent rectangle
                 d3.select(this)
                     .attr('opacity', 0.3)
                     .attr("stroke-width", 2)
-                // tooltip.style("visibility", "hidden"); // Hide the tooltip
+                tooltip.style("visibility", "hidden"); // Hide the tooltip
 
             })
 
     });
-    graph.selectAll('circle-')
+    graph.selectAll('circle-objects')
         .data(astro_data_centers)
         .enter()
         .append('circle')
@@ -256,6 +287,19 @@ function build_sky_map(datetime, lat, lon, alt) {
         })
         .attr('r', 3)
         .style('fill', (d) => d.color)
+        .on("mouseover", function (event, d) {
+            d3.select(this)
+                .attr("r", 4)
+            tooltip.style("visibility", "visible")
+                .html(build_astro_obj_tooltip(d))
+                .style("top", (event.pageY - 10) + "px")
+                .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
+        }).on("mouseout", function (event, d) {
+            d3.select(this)
+                .attr("r", 2)
+            tooltip.style("visibility", "hidden"); // Hide the tooltip
+
+        })
     graph.selectAll('text')
         .data(astro_data_centers)
         .enter()
@@ -272,12 +316,27 @@ function build_sky_map(datetime, lat, lon, alt) {
         .attr('alignment-baseline', 'middle')
         .attr('font-family', 'Consolas')
         .style('fill', (d) => d.color)
+        .on("mouseover", function (event, d) {
+            d3.select(this)
+                .attr("font-size", 'x-large')
+                .attr('font-weight', 700)
+            tooltip.style("visibility", "visible")
+                .html(build_astro_obj_tooltip(d))
+                .style("top", (event.pageY - 10) + "px")
+                .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
+        }).on("mouseout", function (event, d) {
+            d3.select(this)
+                .attr("font-size", 'normal')
+                .attr('font-weight', 400)
+            tooltip.style("visibility", "hidden"); // Hide the tooltip
+
+        })
 
 
     // draw mask
     var arc = d3.arc()
-        .innerRadius(radiusScale(8))
-        .outerRadius(radiusScale(90))
+        .innerRadius(radiusScale(-9))
+        .outerRadius(radiusScale(-90))
         .startAngle(100)
         .endAngle(2 * 180);
 
