@@ -79,10 +79,11 @@ if (navigator.geolocation) {
                 center: [position.coords.longitude, position.coords.latitude],
                 zoom: 7
             });
-            // get_meteo_data(position.coords.latitude, position.coords.longitude).then((meteo_data) => {
-            //     get_time_table(meteo_data)
-            // });
-            get_time_table(ex_data)
+            get_meteo_data(position.coords.latitude, position.coords.longitude).then((meteo_data) => {
+                get_time_table(meteo_data)
+                set_up_skymap("skymap")
+            });
+            // get_time_table(ex_data)
         },
         (error) => {
             console.log(`Error getting location: ${error.message}`);
@@ -99,10 +100,11 @@ if (navigator.geolocation) {
 map.on('click', function (e) {
     marker.setLngLat(e.lngLat).addTo(map);
     // console.log();
-    // get_meteo_data(e.lngLat.lat, e.lngLat.lng).then((meteo_data) => {
-    //     get_time_table(meteo_data)
-    // });
-    get_time_table(ex_data)
+    get_meteo_data(e.lngLat.lat, e.lngLat.lng).then((meteo_data) => {
+        get_time_table(meteo_data)
+        set_up_skymap("skymap")
+    });
+    // get_time_table(ex_data)
 });
 
 

@@ -97,7 +97,7 @@ function build_time_table(aggregated) {
             d3.select(this)
                 .attr('stroke', "tomato")
 
-            build_sky_map(d.time_frame_center.toISO(), aggregated.latitude, aggregated.longitude, aggregated.elevation);
+            build_skymap(d.time_frame_center.toISO(), aggregated.latitude, aggregated.longitude, aggregated.elevation, aggregated.timezone);
         })
 
 
@@ -136,7 +136,7 @@ function build_time_table(aggregated) {
                 return get_moon_phase_symbol(d.moon.phase_angle)
             }
         })
-        .attr('font-family', 'Consolas')
+        .attr('font-family', 'monospace')
         .attr("opacity", 0.5);
 
 
@@ -151,7 +151,7 @@ function build_time_table(aggregated) {
         .style("margin", "5px")
         .style("visibility", "hidden")
         .style("width", "auto")
-        .style('font-family', 'Consolas')
+        .style('font-family', 'monospace')
         .style('font-size', 'x-small')
     // .style("white-space", "nowrap");
 
@@ -159,7 +159,7 @@ function build_time_table(aggregated) {
         .data(y_labels)
         .enter()
         .append('text')
-        .attr('font-family', 'Consolas')
+        .attr('font-family', 'monospace')
         .attr('font-size', 'small')
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'middle')
@@ -173,7 +173,7 @@ function build_time_table(aggregated) {
         .data(x_labels)
         .enter()
         .append('text')
-        .attr('font-family', 'Consolas')
+        .attr('font-family', 'monospace')
         .attr('font-size', 'small')
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'hanging')

@@ -1,119 +1,203 @@
-#pin {
-  fill: rgba(255, 255, 255, 0.486);
-  stroke: rgb(245, 88, 27);
-  stroke-width: 2;
+#map {
+  width: 100%;
+  aspect-ratio: 2/1;
+  margin: 30px;
 }
 
-html,
-body,
-.container-fluid {
+#heatmap {
+  width: 90%;
+}
+
+#skymap {
+  width: 85%;
+  aspect-ratio: 1;
+  margin: 30px;
+}
+
+#sun {
+  fill: #F7DC6F;
+  font-size: larger;
+}
+
+#sun:hover {
+  font-size: xx-large;
+}
+
+#moon {
+  fill: #99A3A4;
+  font-size: normal;
+}
+
+#moon:hover {
+  font-size: x-large;
+}
+
+#mercury {
+  fill: #D98880;
+  font-size: larger;
+}
+
+#mercury:hover {
+  font-size: xx-large;
+}
+
+#venus {
+  fill: #AF7AC5;
+  font-size: larger;
+}
+
+#venus:hover {
+  font-size: xx-large;
+}
+
+#mars {
+  fill: #EC7063;
+  font-size: larger;
+}
+
+#mars:hover {
+  font-size: xx-large;
+}
+
+#jupiter {
+  fill: #E59866;
+  font-size: larger;
+}
+
+#jupiter:hover {
+  font-size: xx-large;
+}
+
+#saturn {
+  fill: #F8C471;
+  font-size: larger;
+}
+
+#saturn:hover {
+  font-size: xx-large;
+}
+
+#uranus {
+  fill: #5DADE2;
+  font-size: larger;
+}
+
+#uranus:hover {
+  font-size: xx-large;
+}
+
+#neptune {
+  fill: #48C9B0;
+  font-size: larger;
+}
+
+#neptune:hover {
+  font-size: xx-large;
+}
+
+
+
+.astro-object-position {
+  fill: #dadada;
+  stroke: none;
+  r: 3;
+}
+
+.astro-object-position:hover {
+  r: 5;
+}
+
+.astro-object-label {
+  fill: #dadada;
+  stroke: none;
+  font-size: normal;
+  font-weight: 400;
+}
+
+.astro-object-label:hover {
+  fill: #dadada;
+  stroke: none;
+  font-size: x-large;
+  font-weight: 700;
+}
+
+.text {
+  text-anchor: start;
+  align-items: baseline;
+  font-family: monospace;
+}
+
+.hovertip {
+  position: absolute;
+  background-color: white;
+  border: 1px solid black;
+  padding: 5px;
+  margin: 5px;
+  visibility: hidden;
+  width: auto;
+  font-size: x-small;
+}
+
+.skymap-container {
+  position: relative;
+}
+
+.skymap-container svg {
+  width: 100%;
   height: 100%;
 }
 
-body {
-  background-color: rgb(255, 254, 253);
+.dusk-dawn-circles {
+  fill: #F8F8F9;
+  stroke: #222b36;
 }
 
-canvas {
-  display: block;
+.night-day-circle {
+  fill: #2B3644;
+  stroke: none;
+}
+
+.orientation-circles {
+  fill: none;
+  stroke: #364456;
+}
+
+.orientation-lines {
+  stroke: #364456;
 }
 
 
-.footer,
-.header {
-  height: 40px;
-  background-color: whitesmoke;
+.slider {
+  width: 100%;
+  height: 20px;
+  appearance: none;
+  background: #ddd;
+  border-radius: 5px;
+  outline: none;
 }
 
-.footer-text {
-  font-size: x-small;
-  margin: auto;
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #555;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #555;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider-label {
+  position: absolute;
+  bottom: -10px;
+  /* Adjust the distance below the slider */
+  left: 0;
+  width: 100%;
   text-align: center;
-}
-
-.href {
-  color: cornflowerblue;
-}
-
-#controls {
-  margin: 30px
-}
-
-
-
-#description {
-  color: cornflowerblue
-}
-
-#title {
-  color: cornflowerblue;
-  margin-top: auto;
-  margin-bottom: auto;
-  margin-left: 45px;
-}
-
-#buttons {
-  float: right;
-}
-
-
-.text-justify {
-  margin-left: 30px;
-  margin-right: 30px;
-  margin-top: 20px;
-  font-size: small;
-}
-
-
-
-
-.input-group-text {
-  color: rgb(51, 51, 51);
-  background-color: whitesmoke;
-  width: 120px;
-}
-
-
-.form-control {
-  color: rgb(51, 51, 51);
-  background-color: rgb(255, 254, 253);
-}
-
-.form-control:disabled {
-  color: rgb(51, 51, 51);
-  background-color: whitesmoke;
-}
-
-.btn-primary {
-  color: cornflowerblue;
-  background-color: whitesmoke;
-  border-radius: 1;
-  border-color: whitesmoke;
-}
-
-.btn-primary:hover {
-  color: whitesmoke;
-  background-color: cornflowerblue;
-  border-radius: 1;
-  border-color: cornflowerblue;
-}
-
-.btn-primary:focus,
-.btn-primary.focus {
-  box-shadow: 0 0 0 0rem whitesmoke;
-}
-
-
-.btn-primary:not(:disabled):not(.disabled):active,
-.btn-primary:not(:disabled):not(.disabled).active,
-.show>.btn-primary.dropdown-toggle {
-  color: whitesmoke;
-  background-color: cornflowerblue;
-  border-color: rgb(187, 211, 255)
-}
-
-.btn-primary:not(:disabled):not(.disabled):active:focus,
-.btn-primary:not(:disabled):not(.disabled).active:focus,
-.show>.btn-primary.dropdown-toggle:focus {
-  box-shadow: 0 0 0 3px cornflowerblue;
 }

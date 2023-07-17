@@ -1,3 +1,5 @@
+
+
 function get_az_and_alt_of_astro_body(body, date, observer) {
     /** Uses the Astronomy lib to calculate the azimuth and altitude
      * of a given astronomical body form a certain observer location
@@ -15,7 +17,70 @@ function get_az_and_alt_of_astro_body(body, date, observer) {
     return { 'azimuth': hor.azimuth, 'altitude': hor.altitude }
 }
 
-function build_sky_map(datetime, lat, lon, alt) {
+function set_up_skymap(skymap_id) {
+    const skymapContainer = document.getElementById(skymap_id);
+    skymapContainer.innerHTML = '';
+
+    const skymapElement = window.getComputedStyle(skymapContainer);
+    const width = parseInt(skymapElement.getPropertyValue('width'));
+    const height = parseInt(skymapElement.getPropertyValue('height'));
+
+    const radiusScale = d3.scaleLinear()
+        .domain([90, -90])
+        .range([0, Math.min(width * 1.6, height * 1.6) / 2]);
+
+    const angleScale = d3.scaleLinear()
+        .domain([0, 360])
+        .range([-Math.PI / 2, 3 / 2 * Math.PI]);
+
+    const svg = d3.select(`#${skymap_id}`)
+        .append('svg')
+        .attr('class', 'skymap')
+        .attr('width', '100%')
+        .attr('height', '100%');
+
+    const graph = svg.append('g')
+        .attr('transform', `translate(${width / 2}, ${height / 2})`);
+
+    graph.selectAll('.dusk-dawn-circles')
+        .data([-18, -12, -6, 0])
+        .enter()
+        .append('circle')
+        .attr('class', 'dusk-dawn-circles')
+        .attr('cx', radiusScale(90))
+        .attr('cy', radiusScale(90))
+        .attr('r', (d) => radiusScale(d));
+
+    graph.append('circle')
+        .attr('class', 'night-day-circle')
+        .attr('cx', radiusScale(90))
+        .attr('cy', radiusScale(90))
+        .attr('r', radiusScale(0));
+
+    graph.selectAll('.orientation-circles')
+        .data([90, 80, 70, 60, 50, 40, 30, 20, 10])
+        .enter()
+        .append('circle')
+        .attr('class', 'orientation-circles')
+        .attr('cx', radiusScale(90))
+        .attr('cy', radiusScale(90))
+        .attr('r', (d) => radiusScale(d));
+
+    graph.selectAll('.orientation-lines')
+        .data([0, 45, 90, 135, 180, 225, 270, 315])
+        .enter()
+        .append('line')
+        .attr('class', 'orientation-lines')
+        .attr('x1', 0)
+        .attr('y1', 0)
+        .attr('x2', (d) => radiusScale(-18) * Math.cos(angleScale(d)))
+        .attr('y2', (d) => radiusScale(-18) * Math.sin(angleScale(d)));
+
+    return [graph, radiusScale, angleScale];
+}
+
+
+function build_skymap(datetime, lat, lon, alt, timezone) {
     /** Uses d3 to build a skymap in a div with the id "skymap".
      * 
      * @param {string} datetime current date as ISO string
@@ -24,328 +89,279 @@ function build_sky_map(datetime, lat, lon, alt) {
      * @param {number} alt altitude of observer
      */
 
-    document.getElementById("skymap").innerHTML = ""
-
     const astro_data = [];
-    const interval = 20;
-    const duration = 8;
+    const timestamps = [];
+    const interval = 10;
+    const duration = 24;
     const startTime = luxon.DateTime.fromISO(datetime).minus({ hours: duration / 2 });
 
     for (let i = 0; i <= duration * 60 / interval; i++) {
         const timestamp = startTime.plus({ 'minutes': interval * i }).toISO();
-        astro_data.push({ 'time': timestamp });
+        timestamps.push(timestamp);
     }
 
+    Astronomy.DefineStar(Astronomy.Body.Star1, 5.52, -5.40, 1344)
+    Astronomy.DefineStar(Astronomy.Body.Star2, 0.68, 41.27, 2537000)
+    Astronomy.DefineStar(Astronomy.Body.Star3, 3.79, 24.07, 444)
+    Astronomy.DefineStar(Astronomy.Body.Star4, 16.68, 36.70, 22200)
+    Astronomy.DefineStar(Astronomy.Body.Star5, 18.18, -13.80, 7000)
+    Astronomy.DefineStar(Astronomy.Body.Star6, 18.64, 33.03, 2300)
+    Astronomy.DefineStar(Astronomy.Body.Star7, 18.16, -24.23, 4100)
+    Astronomy.DefineStar(Astronomy.Body.Star8, 13.44, 47.18, 23000000)
     const observer = new Astronomy.Observer(lat, lon, alt);
-    astro_data.forEach(entry => {
-        entry.sun = get_az_and_alt_of_astro_body(Astronomy.Body.Sun, new Date(entry.time), observer)
-        entry.sun.label = "Sun"
-        entry.moon = get_az_and_alt_of_astro_body(Astronomy.Body.Moon, new Date(entry.time), observer)
-        entry.moon.phase_angle = Astronomy.MoonPhase(new Date(entry.time));
-        entry.moon.label = "Moon"
 
-        entry.mercury = get_az_and_alt_of_astro_body(Astronomy.Body.Mercury, new Date(entry.time), observer)
-        entry.mercury.label = "Mercury"
-        entry.venus = get_az_and_alt_of_astro_body(Astronomy.Body.Venus, new Date(entry.time), observer)
-        entry.venus.label = "Venus"
-        entry.mars = get_az_and_alt_of_astro_body(Astronomy.Body.Mars, new Date(entry.time), observer)
-        entry.mars.label = "Mars"
-        entry.jupiter = get_az_and_alt_of_astro_body(Astronomy.Body.Jupiter, new Date(entry.time), observer)
-        entry.jupiter.label = "Jupiter"
-        entry.saturn = get_az_and_alt_of_astro_body(Astronomy.Body.Saturn, new Date(entry.time), observer)
-        entry.saturn.label = "Saturn"
-        entry.uranus = get_az_and_alt_of_astro_body(Astronomy.Body.Uranus, new Date(entry.time), observer)
-        entry.uranus.label = "Uranus"
-        entry.neptune = get_az_and_alt_of_astro_body(Astronomy.Body.Neptune, new Date(entry.time), observer)
-        entry.neptune.label = "Neptune"
-
-        entry.sun.symbol = '☉'
-        const moon_symbols = ['🌑︎', '🌒︎', '🌓︎', '🌔︎', '🌕︎', '🌖︎', '🌗︎', '🌘︎'];
-        entry.moon.symbol = moon_symbols[Math.round(entry.moon.phase_angle / 45) % 8]
-
-        entry.mercury.symbol = '☿'
-        entry.venus.symbol = '♀'
-        entry.mars.symbol = '♂'
-        entry.jupiter.symbol = '♃'
-        entry.saturn.symbol = '♄'
-        entry.uranus.symbol = '♅'
-        entry.neptune.symbol = '♆'
-
-        Astronomy.DefineStar(Astronomy.Body.Star1, 5.52, -5.40, 1344)
-        Astronomy.DefineStar(Astronomy.Body.Star2, 0.68, 41.27, 2537000)
-        Astronomy.DefineStar(Astronomy.Body.Star3, 3.79, 24.07, 444)
-        Astronomy.DefineStar(Astronomy.Body.Star4, 16.68, 36.70, 22200)
-        Astronomy.DefineStar(Astronomy.Body.Star5, 18.18, -13.80, 7000)
-        Astronomy.DefineStar(Astronomy.Body.Star6, 18.64, 33.03, 2300)
-        Astronomy.DefineStar(Astronomy.Body.Star7, 18.16, -24.23, 4100)
-        Astronomy.DefineStar(Astronomy.Body.Star8, 13.44, 47.18, 23000000)
-
-        entry.M42 = get_az_and_alt_of_astro_body(Astronomy.Body.Star1, new Date(entry.time), observer);
-        entry.M42.label = "Orion Nebula";
-        entry.M42.symbol = "M42";
-        entry.M31 = get_az_and_alt_of_astro_body(Astronomy.Body.Star2, new Date(entry.time), observer);
-        entry.M31.label = "Andromeda Galaxy";
-        entry.M31.symbol = "M31";
-        entry.M45 = get_az_and_alt_of_astro_body(Astronomy.Body.Star3, new Date(entry.time), observer);
-        entry.M45.label = "Pleiades Star Cluster";
-        entry.M45.symbol = "M45";
-        entry.M13 = get_az_and_alt_of_astro_body(Astronomy.Body.Star4, new Date(entry.time), observer);
-        entry.M13.label = "Hercules Cluster";
-        entry.M13.symbol = "M13";
-        entry.M16 = get_az_and_alt_of_astro_body(Astronomy.Body.Star5, new Date(entry.time), observer);
-        entry.M16.label = "Eagle Nebula";
-        entry.M16.symbol = "M16";
-        entry.M57 = get_az_and_alt_of_astro_body(Astronomy.Body.Star6, new Date(entry.time), observer);
-        entry.M57.label = "Ring Nebula";
-        entry.M57.symbol = "M57";
-        entry.M8 = get_az_and_alt_of_astro_body(Astronomy.Body.Star7, new Date(entry.time), observer);
-        entry.M8.label = "Lagoon Nebula";
-        entry.M8.symbol = "M8";
-        entry.M51 = get_az_and_alt_of_astro_body(Astronomy.Body.Star8, new Date(entry.time), observer);
-        entry.M51.label = "Whirlpool Galaxy";
-        entry.M51.symbol = "M51";
-
-        entry.sun.color = "#F7DC6F"
-        entry.moon.color = "#99A3A4"
-        entry.mercury.color = "#D98880"
-        entry.venus.color = "#AF7AC5"
-        entry.mars.color = "#EC7063"
-        entry.jupiter.color = "#E59866"
-        entry.saturn.color = "#F8C471"
-        entry.uranus.color = "#5DADE2"
-        entry.neptune.color = "#48C9B0"
-        entry.M42.color = "#85929E"
-        entry.M31.color = "#85929E"
-        entry.M45.color = "#85929E"
-        entry.M13.color = "#85929E"
-        entry.M16.color = "#85929E"
-        entry.M57.color = "#85929E"
-        entry.M8.color = "#85929E"
-        entry.M51.color = "#85929E"
-
-
-    })
-
-    const astro_data_centers = Object.values(astro_data[Math.floor(astro_data.length / 2)]).slice(1,)
-    console.log(astro_data_centers)
-    const astro_data_past = astro_data.slice(0, 1 + Math.floor(astro_data.length / 2))
-    const astro_data_future = astro_data.slice(Math.floor(astro_data.length / 2),)
-
-
-
-    const width = 800; // Width of the SVG container
-    const height = 800; // Height of the SVG container
-    const centerX = width / 2; // X-coordinate of the center
-    const centerY = height / 2; // Y-coordinate of the center
-
-    // Create an SVG container
-    const svg = d3.select("#skymap")
-        .append('svg')
-        .attr('width', width)
-        .attr('height', height);
-
-    // Define the range for radius (r) and angle (phi)
-    const radiusScale = d3.scaleLinear()
-        .domain([90, -90]) // Range for r
-        // scaling with 1.8 as factor "zooms in"; we're not interested what happens at daytime
-        .range([0, Math.min(width * 1.8, height * 1.8) / 2]); // Output range for radius
-
-    const angleScale = d3.scaleLinear()
-        .domain([0, 360]) // Range for phi
-        .range([-Math.PI / 2, 3 / 2 * Math.PI]); // Output range for angle
-
-    // Create a group element to hold the circular graph elements
-    const graph = svg.append("g")
-        .attr("transform", `translate(${centerX}, ${centerY})`); // Position the graph at the center of the SVG
+    timestamps.forEach(timestamp => {
+        astro_data.push([
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Sun, new Date(timestamp), observer),
+                symbol: "☉",
+                id: "sun"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Moon, new Date(timestamp), observer),
+                label: "Moon",
+                symbol: ['🌑︎', '🌒︎', '🌓︎', '🌔︎', '🌕︎', '🌖︎', '🌗︎', '🌘︎'][Math.round(Astronomy.MoonPhase(new Date(timestamp)) / 45) % 8],
+                id: "moon"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Mercury, new Date(timestamp), observer),
+                label: "Mercury",
+                symbol: "☿",
+                id: "mercury"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Venus, new Date(timestamp), observer),
+                label: "Venus",
+                symbol: "♀",
+                id: "venus"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Mars, new Date(timestamp), observer),
+                label: "Mars",
+                symbol: "♂",
+                id: "mars"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Jupiter, new Date(timestamp), observer),
+                label: "Jupiter",
+                symbol: "♃",
+                id: "jupiter"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Saturn, new Date(timestamp), observer),
+                label: "Saturn",
+                symbol: "♄",
+                id: "saturn"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Uranus, new Date(timestamp), observer),
+                label: "Uranus",
+                symbol: "♅",
+                id: "uranus"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Neptune, new Date(timestamp), observer),
+                label: "Neptune",
+                symbol: "♆",
+                id: "neptune"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Star1, new Date(timestamp), observer),
+                label: "Orion Nebula",
+                symbol: "M42",
+                id: "m42"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Star2, new Date(timestamp), observer),
+                label: "Andromeda Galaxy",
+                symbol: "M31",
+                id: "m31"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Star3, new Date(timestamp), observer),
+                label: "Pleiades Star Cluster",
+                symbol: "M45",
+                id: "m45"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Star4, new Date(timestamp), observer),
+                label: "Hercules Cluster",
+                symbol: "M13",
+                id: "m13"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Star5, new Date(timestamp), observer),
+                label: "Eagle Nebula",
+                symbol: "M16",
+                id: "m16"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Star6, new Date(timestamp), observer),
+                label: "Ring Nebula",
+                symbol: "M57",
+                id: "m57"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Star7, new Date(timestamp), observer),
+                label: "Lagoon Nebula",
+                symbol: "M8",
+                id: "m8"
+            },
+            {
+                position: get_az_and_alt_of_astro_body(Astronomy.Body.Star8, new Date(timestamp), observer),
+                label: "Whirlpool Galaxy",
+                symbol: "M51",
+                id: "m51"
+            }
+        ]);
+    });
 
 
-    // draw dusk/dawn circle
-    graph.append("circle")
-        .attr("cx", radiusScale(90))
-        .attr("cy", radiusScale(90))
-        .attr("r", radiusScale(-9)) // Set the radius of each point
-        .style("fill", "#1A5276")
-        .style("stroke", "none");
-    // draw night/day circle
-    graph.append("circle")
-        .attr("cx", radiusScale(90))
-        .attr("cy", radiusScale(90))
-        .attr("r", radiusScale(0)) // Set the radius of each point
-        .style("fill", "#2C3E50")
-        .style("stroke", "none");
+    const [graph, radiusScale, angleScale] = set_up_skymap("skymap")
 
-    // draw orientation circles
-    graph.selectAll('orientation-circles')
-        .data([90, 80, 70, 60, 50, 40, 30, 20, 10])
-        .enter()
-        .append("circle")
-        .attr("cx", radiusScale(90))
-        .attr("cy", radiusScale(90))
-        .attr("r", (d) => radiusScale(d)) // Set the radius of each point
-        .style("fill", "none")
-        .style("stroke", "#364456");
 
-    graph.selectAll("line")
-        .data([0, 45, 90, 135, 180, 225, 270, 315]) // Specify the radius values
-        .enter()
-        .append("line")
-        .attr("x1", 0) // Starting point at the center
-        .attr("y1", 0) // Starting point at the center
-        .attr("x2", (d) => radiusScale(-12) * Math.cos(angleScale(d))) // Ending point at the circumference using r and phi
-        .attr("y2", (d) => radiusScale(-12) * Math.sin(angleScale(d))) // Ending point at the circumference using r and phi
-        .style("stroke", "#364456"); // Set the line color
+
 
     // Create the tooltip element
     const tooltip = d3.select("body")
         .append("div")
-        .attr("class", "hovertip")
-        .style("position", "absolute")
-        .style("background-color", "white")
-        .style("border", "1px solid black")
-        .style("padding", "5px")
-        .style("margin", "5px")
-        .style("visibility", "hidden")
-        .style("width", "auto")
-        .style('font-family', 'Consolas')
-        .style('font-size', 'x-small')
-    // .style("white-space", "nowrap");
-    function build_past_tooltip(data) {
-        return `Past path of ${data.label}`
-    }
-    function build_future_tooltip(data) {
-        return `Future path of ${data.label}`
-    }
+        .attr("class", "hovertip text")
+
     function build_astro_obj_tooltip(data) {
         return `<b>${data.label} (${data.symbol})</b><br>
-            Azimuth: ${data.azimuth.toFixed(2)}<br>
-            Altitude: ${data.altitude.toFixed(2)}`
+            Azimuth: ${data.position.azimuth.toFixed(2)}<br>
+            Altitude: ${data.position.altitude.toFixed(2)}`
     }
 
-    object_ids = Object.keys(astro_data[0]).filter((item) => item !== 'time');
-    object_ids.forEach((id) => {
-        let line = d3.line()
-            .x((d) => radiusScale(d[id].altitude) * Math.cos(angleScale(d[id].azimuth))) // Calculate the x-coordinate using r and phi
-            .y((d) => radiusScale(d[id].altitude) * Math.sin(angleScale(d[id].azimuth))); // Calculate the y-coordinate using r and phi
-        graph.append("path")
-            .datum(astro_data_past)
-            .attr("d", line)
-            .attr("fill", "none")
-            .attr("stroke", (d) => d[0][id].color)
-            .attr("stroke-width", 2)
-            .attr('opacity', 0.3)
+
+    const slider_container = d3.select('#skymap')
+        .append('div')
+        .attr('class', "row justify-content-center")
+    // Append the label
+    const sliderLabel = slider_container.append("div")
+        .attr("class", "slider-label")
+        .attr("id", "sliderLabel");
+
+
+
+    // const sliderContainer = d3.select("#slider");
+    const slider = slider_container.append("input")
+        .attr("type", "range")
+        .attr('class', 'slider text')
+        .attr("min", 0)
+        .attr("max", astro_data.length - 1)
+        .attr("step", 1)
+        .attr("value", 0);
+    // Set initial label text
+
+
+
+    slider.node().value = Math.floor(astro_data.length / 2)
+
+    slider.on("input", function () {
+        // Get the selected time value
+        const selectedTime = +this.value;
+        sliderLabel.text(`${luxon.DateTime.fromISO(timestamps[selectedTime]).setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss ZZZZ')} (Lat.: ${lat.toFixed(2)}°, Lon.: ${lon.toFixed(2)}°)`);
+
+        // Update the visualization based on the selected time
+        const circles = graph.selectAll('.astro-object-position')
+            .data(astro_data[selectedTime]);
+
+        // Update existing circles
+        circles
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr('transform', (d) => {
+                const x = radiusScale(d.position.altitude) * Math.cos(angleScale(d.position.azimuth));
+                const y = radiusScale(d.position.altitude) * Math.sin(angleScale(d.position.azimuth));
+                return `translate(${x} ${y})`;
+            })
+            .attr('id', (d) => d.id);
+
+        // Enter new circles
+        circles.enter()
+            .append('circle')
+            .attr('class', 'astro-object-position')
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr('transform', (d) => {
+                const x = radiusScale(d.position.altitude) * Math.cos(angleScale(d.position.azimuth));
+                const y = radiusScale(d.position.altitude) * Math.sin(angleScale(d.position.azimuth));
+                return `translate(${x} ${y})`;
+            })
+            .attr('id', (d) => d.id)
             .on("mouseover", function (event, d) {
                 d3.select(this)
-                    .attr("opacity", 1)
-                    .attr("stroke-width", 3)
                 tooltip.style("visibility", "visible")
-                    .html(build_past_tooltip(d[0][id]))
+                    .html(build_astro_obj_tooltip(d))
                     .style("top", (event.pageY - 10) + "px")
-                    .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
-            }).on("mouseout", function (event, d) {
-                d3.select(this)
-                    .attr('opacity', 0.3)
-                    .attr("stroke-width", 2)
-                tooltip.style("visibility", "hidden"); // Hide the tooltip
-
+                    .style("left", (event.pageX + 10) + "px");
             })
-        graph.append("path")
-            .datum(astro_data_future)
-            .attr("d", line)
-            .attr("fill", "none")
-            .attr("stroke", (d) => d[0][id].color)
-            .attr("stroke-width", 2)
-            .style("stroke-dasharray", ("3, 3"))
-            .attr('opacity', 0.3)
+            .on("mouseout", function () {
+                d3.select(this)
+                tooltip.style("visibility", "hidden");
+            });
+
+        // Remove circles that are no longer needed
+        circles.exit().remove();
+
+        // Update or add text elements
+        const lables = graph.selectAll('.astro-object-label')
+            .data(astro_data[selectedTime]);
+
+        // Update existing text elements
+        lables
+            .attr('transform', (d) => {
+                const x = radiusScale(d.position.altitude) * Math.cos(angleScale(d.position.azimuth))
+                const y = radiusScale(d.position.altitude) * Math.sin(angleScale(d.position.azimuth))
+                return `translate(${x + 6} ${y + 3})`
+            })
+            .attr('id', (d) => d.id);
+
+        // Enter new text elements
+        lables.enter()
+            .append('text')
+            .attr('class', 'astro-object-label text')
+            .attr('id', (d) => d.id)
             .on("mouseover", function (event, d) {
                 d3.select(this)
-                    .attr("opacity", 1)
-                    .attr("stroke-width", 3)
                 tooltip.style("visibility", "visible")
-                    .html(build_future_tooltip(d[0][id]))
+                    .html(build_astro_obj_tooltip(d))
                     .style("top", (event.pageY - 10) + "px")
                     .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
-            }).on("mouseout", function (event, d) {
-                d3.select(this)
-                    .attr('opacity', 0.3)
-                    .attr("stroke-width", 2)
-                tooltip.style("visibility", "hidden"); // Hide the tooltip
-
             })
+            .on("mouseout", function () {
+                d3.select(this)
+                tooltip.style("visibility", "hidden"); // Hide the tooltip
+            })
+            .attr('transform', (d) => {
+                const x = radiusScale(d.position.altitude) * Math.cos(angleScale(d.position.azimuth))
+                const y = radiusScale(d.position.altitude) * Math.sin(angleScale(d.position.azimuth))
+                return `translate(${x + 6} ${y + 3})`
+            })
+            .text((d) => d.symbol);
 
+        // Remove text elements that are no longer needed
+        lables.exit().remove();
+
+        // draw mask
+        // var arc = d3.arc()
+        //     .innerRadius(radiusScale(-22))
+        //     .outerRadius(radiusScale(-90))
+        //     .startAngle(0)
+        //     .endAngle(360);
+
+        // graph.append("path")
+        //     .attr("class", "arc")
+        //     .attr("d", arc)
+        //     .attr("fill", "white");
     });
-    graph.selectAll('circle-objects')
-        .data(astro_data_centers)
-        .enter()
-        .append('circle')
-        .attr("cx", 0)
-        .attr("cy", 0)
-        .attr('transform', (d) => {
-            console.log(d)
-            const x = radiusScale(d.altitude) * Math.cos(angleScale(d.azimuth))
-            const y = radiusScale(d.altitude) * Math.sin(angleScale(d.azimuth))
-            return `translate(${x} ${y})`
-        })
-        .attr('r', 3)
-        .style('fill', (d) => d.color)
-        .on("mouseover", function (event, d) {
-            d3.select(this)
-                .attr("r", 4)
-            tooltip.style("visibility", "visible")
-                .html(build_astro_obj_tooltip(d))
-                .style("top", (event.pageY - 10) + "px")
-                .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
-        }).on("mouseout", function (event, d) {
-            d3.select(this)
-                .attr("r", 2)
-            tooltip.style("visibility", "hidden"); // Hide the tooltip
-
-        })
-    graph.selectAll('text')
-        .data(astro_data_centers)
-        .enter()
-        .append('text')
-        .style('font-size', 'normal')
-        .attr('text-anchor', 'end')
-        .attr('transform', (d) => {
-            const x = radiusScale(d.altitude) * Math.cos(angleScale(d.azimuth))
-            const y = radiusScale(d.altitude) * Math.sin(angleScale(d.azimuth))
-            return `translate(${x + 6} ${y + 3})`
-        })
-        .text((d) => d.symbol)
-        .attr('text-anchor', 'start')
-        .attr('alignment-baseline', 'middle')
-        .attr('font-family', 'Consolas')
-        .style('fill', (d) => d.color)
-        .on("mouseover", function (event, d) {
-            d3.select(this)
-                .attr("font-size", 'x-large')
-                .attr('font-weight', 700)
-            tooltip.style("visibility", "visible")
-                .html(build_astro_obj_tooltip(d))
-                .style("top", (event.pageY - 10) + "px")
-                .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
-        }).on("mouseout", function (event, d) {
-            d3.select(this)
-                .attr("font-size", 'normal')
-                .attr('font-weight', 400)
-            tooltip.style("visibility", "hidden"); // Hide the tooltip
-
-        })
-
-
-    // draw mask
-    var arc = d3.arc()
-        .innerRadius(radiusScale(-9))
-        .outerRadius(radiusScale(-90))
-        .startAngle(100)
-        .endAngle(2 * 180);
-
-    graph.append("path")
-        .attr("class", "arc")
-        .attr("d", arc)
-        .attr("fill", "white");
+    slider.dispatch("input");
 
 
 
-    console.log(astro_data)
+
+
+
+
 }
