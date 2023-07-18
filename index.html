@@ -18,36 +18,29 @@
 </head>
 
 <body>
-    <div class="container-fluid fill">
-        <div class="row header">
-            <h3 id="title">Astro Photography Suitability Dashboard</h3>
-        </div>
-        <div class="row main">
-            <div class="col-md-6">
-                <div class="row  justify-content-center">
-                    <div id='map'></div>
-                    <script src="js/map.js"></script>
-                </div>
-                <div class="row justify-content-center">
-                    <div id="heatmap"></div>
-                    <script src="js/aggregate_data.js"></script>
-                    <script src="js/build_time_table.js"></script>
-                </div>
+
+    <div class="row main">
+        <div class="col-md-6">
+            <div class="row  justify-content-center">
+                <div id='map'></div>
+                <script src="js/map.js"></script>
             </div>
-            <div class="col-md-6">
-                <div class="row justify-content-center">
-                    <div id="skymap"></div>
-                    <script src="js/build_sky_map.js"></script>
-                </div>
+            <div class="row justify-content-center">
+                <div id="heatmap"></div>
+                <script src="js/aggregate_data.js"></script>
+                <script src="js/build_heatmap.js"></script>
             </div>
         </div>
-
-
-
-
-        <div class="row footer">
-            <a href="https://github.com/rue-a/AstroPhotoSuitability">https://github.com/rue-a/AstroPhotoSuitability</a>
+        <div class="col-md-6">
+            <div class="row justify-content-center">
+                <div id="skymap"></div>
+                <script src="js/build_sky_map.js"></script>
+            </div>
         </div>
+    </div>
+
+
+
 
 </body>
 

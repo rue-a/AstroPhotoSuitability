@@ -22,7 +22,7 @@ async function get_time_table(meteo_data) {
     for (let timeframe of aggregated.timeframes) {
         time_frame = calculate_suitability(timeframe)
     }
-    build_time_table(aggregated)
+    build_heatmap(aggregated)
 }
 
 function aggregate_open_meteo(data, time_frame_len, offset, time_frame_nb) {

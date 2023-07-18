@@ -1,7 +1,3 @@
-
-
-
-
 function get_az_and_alt_of_astro_body(body, date, observer) {
     /** Uses the Astronomy lib to calculate the azimuth and altitude
      * of a given astronomical body form a certain observer location
@@ -20,12 +16,12 @@ function get_az_and_alt_of_astro_body(body, date, observer) {
 }
 
 function set_up_skymap(skymap_id) {
-    const skymapContainer = document.getElementById(skymap_id);
-    skymapContainer.innerHTML = '';
+    const skymap_container = document.getElementById(skymap_id);
+    skymap_container.innerHTML = '';
 
-    const skymapElement = window.getComputedStyle(skymapContainer);
-    const width = parseInt(skymapElement.getPropertyValue('width'));
-    const height = parseInt(skymapElement.getPropertyValue('height'));
+    const skymap_element = window.getComputedStyle(skymap_container);
+    const width = parseInt(skymap_element.getPropertyValue('width'));
+    const height = parseInt(skymap_element.getPropertyValue('height'));
 
     const radiusScale = d3.scaleLinear()
         .domain([90, -90])
@@ -44,31 +40,35 @@ function set_up_skymap(skymap_id) {
     const graph = svg.append('g')
         .attr('transform', `translate(${width / 2}, ${height / 2})`);
 
-    graph.selectAll('.dusk-dawn-circle')
-        .data([-18, -12, -6, 0])
-        .enter()
-        .append('circle')
-        .attr('class', 'dusk-dawn-circle')
-        .attr('cx', radiusScale(90))
-        .attr('cy', radiusScale(90))
-        .attr('r', (d) => radiusScale(d));
+
 
     graph.append('circle')
         .attr('class', 'sky-circle')
         .attr('cx', radiusScale(90))
         .attr('cy', radiusScale(90))
-        .attr('r', radiusScale(0));
+        .attr('r', radiusScale(-18));
 
-    graph.selectAll('.orientation-circle')
-        .data([90, 60, 30, 0, -6, -12, -18])
+
+
+    graph.selectAll('.outer-circle')
+        .data([-6, -12, -18])
         .enter()
         .append('circle')
-        .attr('class', 'orientation-circle')
+        .attr('class', 'outer-orientation-circle')
+        .attr('cx', radiusScale(90))
+        .attr('cy', radiusScale(90))
+        .attr('r', (d) => radiusScale(d))
+
+    graph.selectAll('.inner-circle')
+        .data([90, 60, 30, 0])
+        .enter()
+        .append('circle')
+        .attr('class', 'inner-orientation-circle')
         .attr('cx', radiusScale(90))
         .attr('cy', radiusScale(90))
         .attr('r', (d) => radiusScale(d));
 
-    graph.selectAll('.orientation-line')
+    graph.selectAll('.altitude-lines')
         .data([0, 90, 180, 270])
         .enter()
         .append('line')
@@ -86,7 +86,7 @@ function set_up_skymap(skymap_id) {
         .attr('transform', (d) => {
             const x = radiusScale(-21.5) * Math.cos(angleScale(d[1]))
             const y = radiusScale(-21.5) * Math.sin(angleScale(d[1]))
-            return `translate(${x} ${y + 1})`
+            return `translate(${x} ${y + 1.5})`
         })
         .text((d) => d[0]);
 
@@ -373,6 +373,7 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
         // Remove text elements that are no longer needed
         labels.exit().remove();
 
+        // make sky animation
         d3.selectAll('.sky-circle')
             .style('fill', d => d3.scalePow()
                 .exponent(0.5)
@@ -387,8 +388,9 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
                 .range(["#2B3644", "#F8F8F9"])
                 .clamp(true)(astro_objects[0].position.altitude)
             );
-        let mask = graph.select(".arc"); // Check if mask already exists
 
+
+        let mask = graph.select(".arc"); // Check if mask already exists
         if (mask.empty()) {
             // Draw mask
             const arc = d3.arc()

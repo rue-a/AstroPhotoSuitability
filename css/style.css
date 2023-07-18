@@ -5,7 +5,10 @@
 }
 
 #heatmap {
-  width: 90%;
+  margin: 25px;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
 }
 
 #skymap {
@@ -138,7 +141,7 @@
   margin: 5px;
   visibility: hidden;
   width: auto;
-  font-size: x-small;
+  font-size: small;
 }
 
 .skymap-container {
@@ -150,18 +153,31 @@
   height: 100%;
 }
 
-.dusk-dawn-circle {
-  fill: #F8F8F9;
-}
 
 .sky-circle {
   fill: #2B3644;
   stroke: none;
 }
 
-.orientation-circle,
-.orientation-line {
+.orientation-line,
+.inner-orientation-circle,
+.outer-orientation-circle {
+  fill: none;
   stroke: #c98493;
+}
+
+.square:hover {
+  fill: lighten(currentColor, 50%);
+  
+}
+
+.selected{
+  stroke: #c98493;
+  stroke-width: 1.5px;
+}
+
+.outer-orientation-circle {
+  stroke-dasharray: 2;
 }
 
 
