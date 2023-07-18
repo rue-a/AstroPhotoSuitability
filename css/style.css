@@ -95,6 +95,11 @@
   font-size: xx-large;
 }
 
+.direction-label {
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-size: larger;
+}
 
 
 .astro-object-position {
@@ -122,8 +127,6 @@
 }
 
 .text {
-  text-anchor: start;
-  align-items: baseline;
   font-family: monospace;
 }
 
@@ -149,7 +152,6 @@
 
 .dusk-dawn-circle {
   fill: #F8F8F9;
-  stroke: #c98493;
 }
 
 .sky-circle {
@@ -157,13 +159,19 @@
   stroke: none;
 }
 
-.orientation-circle {
-  fill: none;
+.orientation-circle,
+.orientation-line {
   stroke: #c98493;
 }
 
-.orientation-line {
-  stroke: #c98493;
+
+.line-label {
+  font-size: xx-small;
+  fill: #c98493
+}
+
+.orientation-circle {
+  fill: none;
 }
 
 

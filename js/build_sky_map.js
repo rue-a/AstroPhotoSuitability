@@ -42,7 +42,7 @@ function set_up_skymap(skymap_id) {
 
     const radiusScale = d3.scaleLinear()
         .domain([90, -90])
-        .range([0, Math.min(width * 1.6, height * 1.6) / 2]);
+        .range([0, Math.min(width * 1.5, height * 1.5) / 2]);
 
     const angleScale = d3.scaleLinear()
         .domain([0, 360])
@@ -73,7 +73,7 @@ function set_up_skymap(skymap_id) {
         .attr('r', radiusScale(0));
 
     graph.selectAll('.orientation-circle')
-        .data([90, 60, 30, 0])
+        .data([90, 60, 30, 0, -6, -12, -18])
         .enter()
         .append('circle')
         .attr('class', 'orientation-circle')
@@ -90,6 +90,30 @@ function set_up_skymap(skymap_id) {
         .attr('y1', 0)
         .attr('x2', (d) => radiusScale(-18) * Math.cos(angleScale(d)))
         .attr('y2', (d) => radiusScale(-18) * Math.sin(angleScale(d)));
+
+    graph.selectAll('direction')
+        .data([['N', 0], ['E', 90], ['S', 180], ['W', 270]])
+        .enter()
+        .append('text')
+        .attr('class', 'direction-label text')
+        .attr('transform', (d) => {
+            const x = radiusScale(-21.5) * Math.cos(angleScale(d[1]))
+            const y = radiusScale(-21.5) * Math.sin(angleScale(d[1]))
+            return `translate(${x} ${y + 1})`
+        })
+        .text((d) => d[0]);
+
+    graph.selectAll('line-label')
+        .data([90, 60, 30, 0, -6, -12, -18])
+        .enter()
+        .append('text')
+        .attr('class', 'line-label text')
+        .attr('transform', (d) => {
+            const x = radiusScale(d) * Math.cos(angleScale(0))
+            const y = radiusScale(d) * Math.sin(angleScale(0))
+            return `translate(${x + 3} ${y + 12})`
+        })
+        .text((d) => String(d).padStart(3, ' '));
 
     return [graph, radiusScale, angleScale];
 }
@@ -381,7 +405,7 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
         if (mask.empty()) {
             // Draw mask
             const arc = d3.arc()
-                .innerRadius(radiusScale(-22))
+                .innerRadius(radiusScale(-24))
                 .outerRadius(radiusScale(-90))
                 .startAngle(0)
                 .endAngle(360);
@@ -391,6 +415,9 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
                 .attr("d", arc)
                 .attr("fill", "white");
         }
+
+
+
 
     });
     slider.dispatch("input");
