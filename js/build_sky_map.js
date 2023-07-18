@@ -1,5 +1,20 @@
 
 
+const quadraticScale = d3.scalePow()
+    .exponent(0.5)
+    .domain([6, -18])// Input value range
+    .range([1, 0])
+    .clamp(true); // Output range
+
+// Example usage
+console.log(quadraticScale(6)); // Output: 0.25
+console.log(quadraticScale(0)); // Output: 0.5625
+console.log(quadraticScale(-6)); // Output: 0.5625
+console.log(quadraticScale(-12)); // Output: 0.5625
+console.log(quadraticScale(-18));
+console.log(quadraticScale(-20)); // Output: 0.5625 // Output: 0.5625
+
+
 function get_az_and_alt_of_astro_body(body, date, observer) {
     /** Uses the Astronomy lib to calculate the azimuth and altitude
      * of a given astronomical body form a certain observer location
@@ -42,35 +57,35 @@ function set_up_skymap(skymap_id) {
     const graph = svg.append('g')
         .attr('transform', `translate(${width / 2}, ${height / 2})`);
 
-    graph.selectAll('.dusk-dawn-circles')
+    graph.selectAll('.dusk-dawn-circle')
         .data([-18, -12, -6, 0])
         .enter()
         .append('circle')
-        .attr('class', 'dusk-dawn-circles')
+        .attr('class', 'dusk-dawn-circle')
         .attr('cx', radiusScale(90))
         .attr('cy', radiusScale(90))
         .attr('r', (d) => radiusScale(d));
 
     graph.append('circle')
-        .attr('class', 'night-day-circle')
+        .attr('class', 'sky-circle')
         .attr('cx', radiusScale(90))
         .attr('cy', radiusScale(90))
         .attr('r', radiusScale(0));
 
-    graph.selectAll('.orientation-circles')
-        .data([90, 80, 70, 60, 50, 40, 30, 20, 10])
+    graph.selectAll('.orientation-circle')
+        .data([90, 60, 30, 0])
         .enter()
         .append('circle')
-        .attr('class', 'orientation-circles')
+        .attr('class', 'orientation-circle')
         .attr('cx', radiusScale(90))
         .attr('cy', radiusScale(90))
         .attr('r', (d) => radiusScale(d));
 
-    graph.selectAll('.orientation-lines')
-        .data([0, 45, 90, 135, 180, 225, 270, 315])
+    graph.selectAll('.orientation-line')
+        .data([0, 90, 180, 270])
         .enter()
         .append('line')
-        .attr('class', 'orientation-lines')
+        .attr('class', 'orientation-line')
         .attr('x1', 0)
         .attr('y1', 0)
         .attr('x2', (d) => radiusScale(-18) * Math.cos(angleScale(d)))
@@ -221,7 +236,6 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
 
 
 
-
     // Create the tooltip element
     const tooltip = d3.select("body")
         .append("div")
@@ -261,11 +275,12 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
     slider.on("input", function () {
         // Get the selected time value
         const selectedTime = +this.value;
+        const astro_objects = astro_data[selectedTime]
         sliderLabel.text(`${luxon.DateTime.fromISO(timestamps[selectedTime]).setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss ZZZZ')} (Lat.: ${lat.toFixed(2)}°, Lon.: ${lon.toFixed(2)}°)`);
 
         // Update the visualization based on the selected time
         const circles = graph.selectAll('.astro-object-position')
-            .data(astro_data[selectedTime]);
+            .data(astro_objects);
 
         // Update existing circles
         circles
@@ -306,11 +321,11 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
         circles.exit().remove();
 
         // Update or add text elements
-        const lables = graph.selectAll('.astro-object-label')
-            .data(astro_data[selectedTime]);
+        const labels = graph.selectAll('.astro-object-label')
+            .data(astro_objects);
 
         // Update existing text elements
-        lables
+        labels
             .attr('transform', (d) => {
                 const x = radiusScale(d.position.altitude) * Math.cos(angleScale(d.position.azimuth))
                 const y = radiusScale(d.position.altitude) * Math.sin(angleScale(d.position.azimuth))
@@ -319,7 +334,7 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
             .attr('id', (d) => d.id);
 
         // Enter new text elements
-        lables.enter()
+        labels.enter()
             .append('text')
             .attr('class', 'astro-object-label text')
             .attr('id', (d) => d.id)
@@ -342,19 +357,38 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
             .text((d) => d.symbol);
 
         // Remove text elements that are no longer needed
-        lables.exit().remove();
+        labels.exit().remove();
 
-        // draw mask
-        // var arc = d3.arc()
-        //     .innerRadius(radiusScale(-22))
-        //     .outerRadius(radiusScale(-90))
-        //     .startAngle(0)
-        //     .endAngle(360);
+        d3.selectAll('.sky-circle')
+            .style('fill', d => d3.scalePow()
+                .exponent(0.5)
+                .domain([0, -18])
+                .range(["#F8F8F9", "#2B3644"])
+                .clamp(true)(astro_objects[0].position.altitude)
+            );
+        d3.selectAll('.dusk-dawn-circle')
+            .style('fill', d => d3.scalePow()
+                .exponent(0.5)
+                .domain([18, 0])
+                .range(["#2B3644", "#F8F8F9"])
+                .clamp(true)(astro_objects[0].position.altitude)
+            );
+        let mask = graph.select(".arc"); // Check if mask already exists
 
-        // graph.append("path")
-        //     .attr("class", "arc")
-        //     .attr("d", arc)
-        //     .attr("fill", "white");
+        if (mask.empty()) {
+            // Draw mask
+            const arc = d3.arc()
+                .innerRadius(radiusScale(-22))
+                .outerRadius(radiusScale(-90))
+                .startAngle(0)
+                .endAngle(360);
+
+            mask = graph.append("path")
+                .attr("class", "arc")
+                .attr("d", arc)
+                .attr("fill", "white");
+        }
+
     });
     slider.dispatch("input");
 

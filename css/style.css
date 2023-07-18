@@ -147,28 +147,28 @@
   height: 100%;
 }
 
-.dusk-dawn-circles {
+.dusk-dawn-circle {
   fill: #F8F8F9;
-  stroke: #222b36;
+  stroke: #c98493;
 }
 
-.night-day-circle {
+.sky-circle {
   fill: #2B3644;
   stroke: none;
 }
 
-.orientation-circles {
+.orientation-circle {
   fill: none;
-  stroke: #364456;
+  stroke: #c98493;
 }
 
-.orientation-lines {
-  stroke: #364456;
+.orientation-line {
+  stroke: #c98493;
 }
 
 
 .slider {
-  width: 100%;
+  width: 90%;
   height: 20px;
   appearance: none;
   background: #ddd;
