@@ -276,7 +276,10 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
         // Get the selected time value
         const selectedTime = +this.value;
         const astro_objects = astro_data[selectedTime]
-        sliderLabel.text(`${luxon.DateTime.fromISO(timestamps[selectedTime]).setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss ZZZZ')} (Lat.: ${lat.toFixed(2)}°, Lon.: ${lon.toFixed(2)}°)`);
+        sliderLabel.text(
+            `${luxon.DateTime.fromISO(timestamps[selectedTime]).setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss ZZZZ')} 
+            (${lat >= 0 ? lat.toFixed(2) + "°N" : (-lat).toFixed(2) + "°S"}, ${lon >= 0 ? lon.toFixed(2) + "°E" : -lon.toFixed(2) + "°W"})`
+        );
 
         // Update the visualization based on the selected time
         const circles = graph.selectAll('.astro-object-position')
