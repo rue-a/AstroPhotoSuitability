@@ -1,18 +1,5 @@
 
 
-const quadraticScale = d3.scalePow()
-    .exponent(0.5)
-    .domain([6, -18])// Input value range
-    .range([1, 0])
-    .clamp(true); // Output range
-
-// Example usage
-console.log(quadraticScale(6)); // Output: 0.25
-console.log(quadraticScale(0)); // Output: 0.5625
-console.log(quadraticScale(-6)); // Output: 0.5625
-console.log(quadraticScale(-12)); // Output: 0.5625
-console.log(quadraticScale(-18));
-console.log(quadraticScale(-20)); // Output: 0.5625 // Output: 0.5625
 
 
 function get_az_and_alt_of_astro_body(body, date, observer) {
