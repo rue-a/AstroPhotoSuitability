@@ -62,7 +62,7 @@ var map = new maplibregl.Map({
 
 const marker = new maplibregl.Marker({
     anchor: "bottom",
-    element: load_marker_shape('../assets/marker.svg', {
+    element: load_marker_shape('assets/marker.svg', {
         'scale': 2,
         'fill': 'transparent',
         'stroke': 'black'
