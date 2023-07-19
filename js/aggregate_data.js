@@ -7,23 +7,6 @@ async function get_meteo_data(lat, lon) {
 
 }
 
-async function get_time_table(meteo_data) {
-    const aggregated = await aggregate_open_meteo(
-        data = meteo_data,
-        time_frame_len = 3,
-        offset = 17,
-        time_frame_nb = 4
-    );
-    const observer = new Astronomy.Observer(aggregated.latitude, aggregated.longitude, aggregated.elevation);
-    for (let timeframe of aggregated.timeframes) {
-        timeframe = astro_enrich_time_frame(timeframe, observer)
-    }
-
-    for (let timeframe of aggregated.timeframes) {
-        time_frame = calculate_suitability(timeframe)
-    }
-    build_heatmap(aggregated)
-}
 
 function aggregate_open_meteo(data, time_frame_len, offset, time_frame_nb) {
     /** Aggregates an Open Meteo JSON response. Open Meteo delivers an hourly weather data
@@ -84,6 +67,16 @@ function aggregate_open_meteo(data, time_frame_len, offset, time_frame_nb) {
     }
     if (offset + time_frame_len * time_frame_nb > 23) {
         aggregated.timeframes = aggregated.timeframes.slice(0, aggregated.timeframes.length - time_frame_nb)
+    }
+
+
+    const observer = new Astronomy.Observer(aggregated.latitude, aggregated.longitude, aggregated.elevation);
+    for (let timeframe of aggregated.timeframes) {
+        astro_enrich_time_frame(timeframe, observer)
+    }
+
+    for (let timeframe of aggregated.timeframes) {
+        calculate_suitability(timeframe)
     }
     return aggregated
 

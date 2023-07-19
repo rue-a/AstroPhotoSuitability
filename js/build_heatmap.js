@@ -4,13 +4,12 @@ function build_heatmap(aggregated) {
 
     const heatmap_element = window.getComputedStyle(heatmap_container);
     const width = parseInt(heatmap_element.getPropertyValue('width'));
-    // const y_labels_width = (0.5 / 10) * width;
-    const y_labels_width = 0;
-    const x_labels_height = 3 * y_labels_width;
-    const cellSize = (9 / 10) * ((width - y_labels_width) / 15);
-    const cellPadding = 1 / 10 * cellSize
-    // const height = (cellSize) * 4 + 3 * cellPadding + x_labels_height
-    const height = (1 / 3) * width
+    const cell_width = ((9.5 / 10) * width) / 15;
+    const cell_padding = ((0.5 / 10) * width) / 17;
+    const cell_height = (2 / 3) * cell_width
+
+    const label_height = 11
+    const height = (cell_height + cell_padding) * aggregated.nb_of_timeframes_per_cycle
 
 
 
@@ -24,15 +23,18 @@ function build_heatmap(aggregated) {
 
     const svg = d3.select('#heatmap')
         .append('svg')
-        .attr('width', width)
-        .attr('height', height)
+        .attr('width', width + 2 * label_height)
+        .attr('height', height + 2 * label_height)
     // .attr('transform', 'translate(0 -50)')
 
 
+    // translate table cell downwards to make space for label on top of table
     const cells_group = svg.append('g')
-        .attr('transform', `translate(${y_labels_width}, ${(cellSize / 2)})`)
+        .attr('transform', `translate(${label_height + cell_padding}, ${label_height + cell_padding})`)
     const moonIconGroup = svg.append('g')
-        .attr('transform', `translate(${y_labels_width}, ${(cellSize / 2)})`)
+        .attr('transform', `translate(${label_height + cell_padding}, ${label_height + cell_padding})`)
+    const time_label_group = svg.append('g')
+        .attr('transform', `translate(${label_height + cell_padding}, ${label_height + cell_padding})`)
 
     const colorScale = d3.scaleLinear()
         .domain([0, 1])
@@ -46,32 +48,27 @@ function build_heatmap(aggregated) {
         return { 'i': index, 'label': label }
     })
 
+    const y_labels = data.slice(0, aggregated.nb_of_timeframes_per_cycle).map((data, index) => {
+        return { 'i': Math.abs(index - aggregated.nb_of_timeframes_per_cycle + 1), 'label': data.time_frame_center.toFormat("HH:mm") }
+    })
 
-    let y_labels = []
-    for (let i = 0; i < aggregated.nb_of_timeframes_per_cycle; i++) {
-        y_labels.push({ 'i': aggregated.nb_of_timeframes_per_cycle - i, 'time': `${data[i].time_frame_center.minus({ 'hours': 1, 'minutes': 30 }).hour.toString().padStart(2, '0')}:00` })
-    }
-    y_labels.push({ 'i': 0, 'time': `${data[aggregated.nb_of_timeframes_per_cycle - 1].time_frame_center.plus({ 'hours': 1, 'minutes': 30 }).hour.toString().padStart(2, '0')}:00` })
+
 
 
     cells_group.selectAll('rect')
         .data(data)
         .enter()
         .append('rect')
-        .attr('width', cellSize)
-        .attr('height', cellSize)
+        .attr('width', cell_width)
+        .attr('height', cell_height)
         .attr('x', function (d) {
-            const col = Math.floor(d.index / 4)
-            return col * (cellSize + cellPadding) + cellPadding;
+            const col = Math.floor(d.index / aggregated.nb_of_timeframes_per_cycle)
+            return col * (cell_width + cell_padding) + cell_padding;
         })
         .attr('y', function (d) {
-            const hour = d.time_frame_center.hour
-            let row;
-            if (hour == 18) { row = 3 }
-            if (hour == 21) { row = 2 }
-            if (hour == 0) { row = 1 }
-            if (hour == 3) { row = 0 }
-            return (row) * (cellSize + cellPadding);
+            // get row_nb from offset, timeframe len and timeframe_nb (top row = 0th row)
+            const row = Math.abs((d.time_frame_center.hour - Math.floor(aggregated.time_frame_len / 2) - aggregated.offset + 24) % 24 / aggregated.time_frame_len - aggregated.nb_of_timeframes_per_cycle + 1)
+            return (row) * (cell_height + cell_padding);
         })
         .attr('fill', function (d) {
             return d ? colorScale(d.suit.overall) : '#eee';
@@ -81,13 +78,13 @@ function build_heatmap(aggregated) {
                 .attr("fill", d3.interpolateRgb(this.getAttribute('fill'), "#ffffff")(0.6))
             tooltip.style("visibility", "visible")
                 .html(build_tooltip(d, aggregated.time_frame_len, aggregated.timezone_abbreviation))
-                .style("top", (event.pageY - 10) + "px")
-                .style("left", (event.pageX + 10) + "px"); // Update the tooltip position
+                .style("top", (event.pageY - tooltip.node().getBoundingClientRect().height - 10) + "px")
+                .style("left", (event.pageX + 10) + "px");
         }).on("mouseout", function () {
             d3.select(this).attr('fill', function (d) {
                 return d ? colorScale(d.suit.overall) : '#eee';
             })
-            tooltip.style("visibility", "hidden"); // Hide the tooltip
+            tooltip.style("visibility", "hidden");
 
         })
         .on("click", function (event, d) {
@@ -100,7 +97,6 @@ function build_heatmap(aggregated) {
         })
 
 
-
     moonIconGroup.selectAll('moon-icons')
         .data(data)
         .enter()
@@ -108,6 +104,8 @@ function build_heatmap(aggregated) {
         .style('font-size', 'x-small')
         .style("filter", "grayscale(100%)")
         .attr('text-anchor', 'end')
+        .attr('font-family', 'monospace')
+        .attr("opacity", 0.5)
         .attr('transform', function (d) {
             if (d.moon.altitude > 0) {
                 let index;
@@ -115,28 +113,21 @@ function build_heatmap(aggregated) {
                     let item = data[i]
                     if (item.time_frame_center == d.time_frame_center) { index = i }
                 }
-                const col = Math.floor(index / 4)
-                const x_cell_bot_right = col * (cellSize + cellPadding) + cellSize;
+                const col = Math.floor(index / aggregated.nb_of_timeframes_per_cycle)
+                const x_cell_bot_right = (col + 1) * (cell_width + cell_padding);
 
-                const hour = d.time_frame_center.hour
-                let row;
-                if (hour == 18) { row = 3 }
-                if (hour == 21) { row = 2 }
-                if (hour == 0) { row = 1 }
-                if (hour == 3) { row = 0 }
-                const y_cell_bot_right = (row) * (cellSize + cellPadding) + cellSize;
+                const row = Math.abs((d.time_frame_center.hour - Math.floor(aggregated.time_frame_len / 2) - aggregated.offset + 24) % 24 / aggregated.time_frame_len - aggregated.nb_of_timeframes_per_cycle + 1)
+                const y_cell_bot_right = (row) * (cell_height + cell_padding) + cell_height;
 
-                // -x because the moon emoji hangs below the baseline
-                return `translate(${x_cell_bot_right - 1} ${y_cell_bot_right - 3})`
+                // move moon icon away from border
+                return `translate(${x_cell_bot_right - 1.5} ${y_cell_bot_right - 2.5})`
             }
         })
         .text(function (d) {
             if (d.moon.altitude > 0) {
                 return ['🌑︎', '🌒︎', '🌓︎', '🌔︎', '🌕︎', '🌖︎', '🌗︎', '🌘︎'][Math.round(d.moon.phase_angle / 45) % 8]
             }
-        })
-        .attr('font-family', 'monospace')
-        .attr("opacity", 0.5);
+        });
 
 
     // Create the tooltip element
@@ -144,21 +135,23 @@ function build_heatmap(aggregated) {
         .append("div")
         .attr("class", "hovertip text")
 
-    // svg.selectAll("y-label")
-    //     .data(y_labels)
-    //     .enter()
-    //     .append('text')
-    //     .attr('font-family', 'monospace')
-    //     .attr('font-size', 'small')
-    //     .attr('text-anchor', 'end')
-    //     .attr('alignment-baseline', 'middle')
-    //     .attr('x', y_labels_width - 10)
-    //     .attr('y', function (d) {
-    //         return d.i * (cellSize + cellPadding) + (cellSize / 2);
-    //     })
-    //     .text(function (d) { return d.time });
 
-    svg.selectAll("x-labels1")
+    time_label_group.selectAll("x-labels-top")
+        .data(x_labels.slice(1, x_labels.length))
+        .enter()
+        .append('text')
+        .attr('font-family', 'monospace')
+        .attr('font-size', 'x-small')
+        .attr('text-anchor', 'end')
+        .attr('transform', function (d) {
+            // i starts with 1
+            let x = parseInt(d.i) * (cell_width + cell_padding);
+            let y = - cell_padding;
+            return `translate(${x} ${y})`;
+        })
+        .text(function (d) { return d.label });
+
+    time_label_group.selectAll("x-labels-bot")
         .data(x_labels.slice(0, x_labels.length - 1))
         .enter()
         .append('text')
@@ -167,28 +160,44 @@ function build_heatmap(aggregated) {
         .attr('text-anchor', 'begin')
         .attr('alignment-baseline', 'hanging')
         .attr('transform', function (d) {
-            let x = ((parseInt(d.i)) * (cellSize + cellPadding)) + cellPadding;
-            let y = 4 * (cellSize + cellPadding) + (cellSize / 2);
+            // i starts with 0
+            let x = parseInt(d.i) * (cell_width + cell_padding);
+            let y = aggregated.nb_of_timeframes_per_cycle * (cell_height + cell_padding);
             return `translate(${x} ${y})`;
         })
         .text(function (d) { return d.label });
 
-    svg.selectAll("x-labels2")
-        .data(x_labels.slice(1, x_labels.length))
+    time_label_group.selectAll("y-labels-left")
+        .data(y_labels)
         .enter()
         .append('text')
         .attr('font-family', 'monospace')
-        .attr('font-size', 'x-small')
-        .attr('text-anchor', 'end')
-        // .attr('alignment-baseline', 'hanging')
+        .attr('font-size', 'xx-small')
+        .attr('text-anchor', 'middle')
         .attr('transform', function (d) {
             console.log(d)
-            let x = ((parseInt(d.i)) * (cellSize + cellPadding));
-            let y = cellSize / 2 - cellPadding;
-            return `translate(${x} ${y})`;
+            let x = 0;
+            let y = parseInt(d.i) * (cell_height + cell_padding) + cell_height / 2;
+            return `translate(${x} ${y}) rotate(270)`;
+        })
+        .text(function (d) { return d.label });
+    time_label_group.selectAll("y-labels-right")
+        .data(y_labels)
+        .enter()
+        .append('text')
+        .attr('font-family', 'monospace')
+        .attr('font-size', 'xx-small')
+        .attr('text-anchor', 'middle')
+        .attr('transform', function (d) {
+            let x = (x_labels.length - 1) * (cell_width + cell_padding) + cell_padding;
+            let y = parseInt(d.i) * (cell_height + cell_padding) + cell_height / 2;
+            return `translate(${x} ${y}) rotate(90)`;
         })
         .text(function (d) { return d.label });
 
+
+
+    return 15 * cell_width + 14 + cell_padding
 }
 
 function get_cloudcover_info_str(cloudcover) {
@@ -299,6 +308,8 @@ function build_tooltip(timeframe, time_frame_len_hours, timezone) {
         <u><b>Suitability: ${(timeframe.suit.overall * 100).toFixed()} %</u></b><br>`
 
     return tooltip;
+
+
 }
 
 

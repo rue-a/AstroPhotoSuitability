@@ -21,11 +21,12 @@ function set_up_skymap(skymap_id) {
 
     const skymap_element = window.getComputedStyle(skymap_container);
     const width = parseInt(skymap_element.getPropertyValue('width'));
-    const height = parseInt(skymap_element.getPropertyValue('height'));
+    const height = (3 / 4) * width;
+    const radius = (7 / 10) * width
 
     const radiusScale = d3.scaleLinear()
         .domain([90, -90])
-        .range([0, Math.min(width * 1.5, height * 1.5) / 2]);
+        .range([0, Math.min(radius * 1.5, radius * 1.5) / 2]);
 
     const angleScale = d3.scaleLinear()
         .domain([0, 360])
@@ -35,10 +36,11 @@ function set_up_skymap(skymap_id) {
         .append('svg')
         .attr('class', 'skymap')
         .attr('width', '100%')
-        .attr('height', '100%');
+        .attr('height', height);
 
     const graph = svg.append('g')
-        .attr('transform', `translate(${width / 2}, ${height / 2})`);
+        .attr('transform', `translate(${width / 2}, ${radius / 2})`)
+        .attr('id', 'skymap-graphic');
 
 
 
@@ -102,7 +104,24 @@ function set_up_skymap(skymap_id) {
         })
         .text((d) => String(d).padStart(3, ' '));
 
-    return [graph, radiusScale, angleScale];
+    const slider_container = d3.select(`#${skymap_id}`)
+        .append('div')
+        // TODO: fix this hack at some point
+        .style("margin-bottom", "100%");
+
+    const slider = slider_container.append("input")
+        .attr("type", "range")
+        .attr('class', 'slider text')
+        .style('width', `${(8 / 10) * radius}px`)
+        .attr("disabled", true);
+
+    const slider_label = slider_container.append("p")
+        .attr("class", "slider-label text")
+        .attr("id", "slider-label")
+        .text('Click on a timeframe to activate the time slider.');
+
+
+    return [graph, radiusScale, angleScale, slider, slider_label];
 }
 
 
@@ -243,7 +262,7 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
     });
 
 
-    const [graph, radiusScale, angleScale] = set_up_skymap("skymap")
+    const [graph, radiusScale, angleScale, slider, slider_label] = set_up_skymap("skymap")
 
 
 
@@ -259,24 +278,15 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
     }
 
 
-    const slider_container = d3.select('#skymap')
-        .append('div')
-        .attr('class', "row justify-content-center")
-    // Append the label
-    const sliderLabel = slider_container.append("div")
-        .attr("class", "slider-label")
-        .attr("id", "sliderLabel");
 
 
 
     // const sliderContainer = d3.select("#slider");
-    const slider = slider_container.append("input")
-        .attr("type", "range")
-        .attr('class', 'slider text')
-        .attr("min", 0)
+    slider.attr("min", 0)
         .attr("max", astro_data.length - 1)
         .attr("step", 1)
-        .attr("value", 0);
+        .attr("value", 0)
+        .attr("disabled", null);
     // Set initial label text
 
 
@@ -287,7 +297,7 @@ function build_skymap(datetime, lat, lon, alt, timezone) {
         // Get the selected time value
         const selectedTime = +this.value;
         const astro_objects = astro_data[selectedTime]
-        sliderLabel.text(
+        slider_label.text(
             `${luxon.DateTime.fromISO(timestamps[selectedTime]).setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss ZZZZ')} 
             (${lat >= 0 ? lat.toFixed(2) + "°N" : (-lat).toFixed(2) + "°S"}, ${lon >= 0 ? lon.toFixed(2) + "°E" : -lon.toFixed(2) + "°W"})`
         );

@@ -80,10 +80,16 @@ if (navigator.geolocation) {
                 zoom: 7
             });
             get_meteo_data(position.coords.latitude, position.coords.longitude).then((meteo_data) => {
-                get_time_table(meteo_data)
+                const aggregated = aggregate_open_meteo(
+                    data = meteo_data,
+                    time_frame_len = 2,
+                    offset = 17,
+                    time_frame_nb = 7
+                );
+
+                const heatmap_width = build_heatmap(aggregated)
                 set_up_skymap("skymap")
             });
-            // get_time_table(ex_data)
         },
         (error) => {
             console.log(`Error getting location: ${error.message}`);
@@ -101,10 +107,16 @@ map.on('click', function (e) {
     marker.setLngLat(e.lngLat).addTo(map);
     // console.log();
     get_meteo_data(e.lngLat.lat, e.lngLat.lng).then((meteo_data) => {
-        get_time_table(meteo_data)
+        const aggregated = aggregate_open_meteo(
+            data = meteo_data,
+            time_frame_len = 2,
+            offset = 17,
+            time_frame_nb = 7
+        );
+
+        const heatmap_width = build_heatmap(aggregated)
         set_up_skymap("skymap")
     });
-    // get_time_table(ex_data)
 });
 
 

@@ -1,3 +1,11 @@
+#body{
+  overflow: hidden;
+}
+
+#main {
+  margin: 10px
+}
+
 #map {
   width: 100%;
   aspect-ratio: 2/1;
@@ -7,14 +15,11 @@
 #heatmap {
   margin: 25px;
   width: 100%;
-  display: flex;
-  justify-content: flex-end;
 }
 
 #skymap {
-  width: 85%;
   aspect-ratio: 1;
-  margin: 30px;
+  margin-top: 20px;
 }
 
 #sun {
@@ -166,14 +171,9 @@
   stroke: #c98493;
 }
 
-.square:hover {
-  fill: lighten(currentColor, 50%);
-  
-}
-
 .selected{
-  stroke: #c98493;
-  stroke-width: 1.5px;
+  stroke: #000000;
+  stroke-width: 2px;
 }
 
 .outer-orientation-circle {
@@ -192,7 +192,6 @@
 
 
 .slider {
-  width: 90%;
   height: 20px;
   appearance: none;
   background: #ddd;
@@ -201,7 +200,6 @@
 }
 
 .slider::-webkit-slider-thumb {
-  appearance: none;
   width: 20px;
   height: 20px;
   background: #555;
@@ -219,8 +217,6 @@
 
 .slider-label {
   position: absolute;
-  bottom: -10px;
-  /* Adjust the distance below the slider */
   left: 0;
   width: 100%;
   text-align: center;
