@@ -185,7 +185,7 @@ function build_heatmap(aggregated) {
         .attr('alignment-baseline', 'hanging')
         .attr('transform', function (d) {
             // i starts with 0
-            let x = parseInt(d.i) * (cell_width + cell_padding);
+            let x = parseInt(d.i) * (cell_width + cell_padding) + cell_padding;
             let y = aggregated.nb_of_timeframes_per_cycle * (cell_height + cell_padding);
             return `translate(${x} ${y})`;
         })
@@ -201,7 +201,7 @@ function build_heatmap(aggregated) {
         .attr('alignment-baseline', 'hanging')
         .attr('transform', function (d) {
             // i starts with 0
-            let x = parseInt(d.i) * (cell_width + cell_padding);
+            let x = parseInt(d.i) * (cell_width + cell_padding) + cell_padding;
             let y = aggregated.nb_of_timeframes_per_cycle * (cell_height + cell_padding) + label_height;
             return `translate(${x} ${y})`;
         })
