@@ -23,18 +23,18 @@ function build_heatmap(aggregated) {
 
     const svg = d3.select('#heatmap')
         .append('svg')
-        .attr('width', width + 2 * label_height)
-        .attr('height', height + 2 * label_height)
+        .attr('width', width + 2 * label_height + 2 * cell_padding)
+        .attr('height', height + 4 * label_height + 4 * cell_padding)
     // .attr('transform', 'translate(0 -50)')
 
 
     // translate table cell downwards to make space for label on top of table
     const cells_group = svg.append('g')
-        .attr('transform', `translate(${label_height + cell_padding}, ${label_height + cell_padding})`)
+        .attr('transform', `translate(${label_height + cell_padding}, ${2 * (label_height + cell_padding)})`)
     const moonIconGroup = svg.append('g')
-        .attr('transform', `translate(${label_height + cell_padding}, ${label_height + cell_padding})`)
+        .attr('transform', `translate(${label_height + cell_padding}, ${2 * (label_height + cell_padding)})`)
     const time_label_group = svg.append('g')
-        .attr('transform', `translate(${label_height + cell_padding}, ${label_height + cell_padding})`)
+        .attr('transform', `translate(${label_height + cell_padding}, ${2 * (label_height + cell_padding)})`)
 
     const colorScale = d3.scaleLinear()
         .domain([0, 1])
@@ -42,13 +42,21 @@ function build_heatmap(aggregated) {
         .interpolate(d3.interpolateRgb);
 
 
-    const x_labels = [...new Set(data.map(data => {
+    const dates = [...new Set(data.map(data => {
         return data.time_frame_center.toFormat('MMM dd');
     }))].map((label, index) => {
         return { 'i': index, 'label': label }
     })
 
-    const y_labels = data.slice(0, aggregated.nb_of_timeframes_per_cycle).map((data, index) => {
+    const weekdays = [].concat(...Array(3).fill([...new Set(data.map(data => {
+        return data.time_frame_center.toFormat('ccc');
+    }))])).slice(0, dates.length).map((label, index) => {
+        return { 'i': index, 'label': label }
+    })
+    console.log(weekdays)
+
+
+    const times = data.slice(0, aggregated.nb_of_timeframes_per_cycle).map((data, index) => {
         return { 'i': Math.abs(index - aggregated.nb_of_timeframes_per_cycle + 1), 'label': data.time_frame_center.toFormat("HH:mm") }
     })
 
@@ -136,8 +144,24 @@ function build_heatmap(aggregated) {
         .attr("class", "hovertip text")
 
 
+    time_label_group.selectAll("x-labels-weekdays-top")
+        .data(weekdays.slice(1, weekdays.length))
+        .enter()
+        .append('text')
+        .attr('font-family', 'monospace')
+        .attr('font-size', 'x-small')
+        .attr('text-anchor', 'end')
+        .attr('transform', function (d) {
+            // i starts with 1
+            let x = parseInt(d.i) * (cell_width + cell_padding);
+            let y = - label_height;
+            return `translate(${x} ${y})`;
+        })
+        .text(function (d) { return d.label });
+
+
     time_label_group.selectAll("x-labels-top")
-        .data(x_labels.slice(1, x_labels.length))
+        .data(dates.slice(1, dates.length))
         .enter()
         .append('text')
         .attr('font-family', 'monospace')
@@ -152,7 +176,7 @@ function build_heatmap(aggregated) {
         .text(function (d) { return d.label });
 
     time_label_group.selectAll("x-labels-bot")
-        .data(x_labels.slice(0, x_labels.length - 1))
+        .data(dates.slice(0, dates.length - 1))
         .enter()
         .append('text')
         .attr('font-family', 'monospace')
@@ -167,8 +191,24 @@ function build_heatmap(aggregated) {
         })
         .text(function (d) { return d.label });
 
+    time_label_group.selectAll("x-labels-weekdays-bot")
+        .data(weekdays.slice(0, weekdays.length - 1))
+        .enter()
+        .append('text')
+        .attr('font-family', 'monospace')
+        .attr('font-size', 'x-small')
+        .attr('text-anchor', 'begin')
+        .attr('alignment-baseline', 'hanging')
+        .attr('transform', function (d) {
+            // i starts with 0
+            let x = parseInt(d.i) * (cell_width + cell_padding);
+            let y = aggregated.nb_of_timeframes_per_cycle * (cell_height + cell_padding) + label_height;
+            return `translate(${x} ${y})`;
+        })
+        .text(function (d) { return d.label });
+
     time_label_group.selectAll("y-labels-left")
-        .data(y_labels)
+        .data(times)
         .enter()
         .append('text')
         .attr('font-family', 'monospace')
@@ -182,14 +222,14 @@ function build_heatmap(aggregated) {
         })
         .text(function (d) { return d.label });
     time_label_group.selectAll("y-labels-right")
-        .data(y_labels)
+        .data(times)
         .enter()
         .append('text')
         .attr('font-family', 'monospace')
         .attr('font-size', 'xx-small')
         .attr('text-anchor', 'middle')
         .attr('transform', function (d) {
-            let x = (x_labels.length - 1) * (cell_width + cell_padding) + cell_padding;
+            let x = (dates.length - 1) * (cell_width + cell_padding) + cell_padding;
             let y = parseInt(d.i) * (cell_height + cell_padding) + cell_height / 2;
             return `translate(${x} ${y}) rotate(90)`;
         })
