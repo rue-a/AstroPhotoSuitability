@@ -106,8 +106,8 @@ function set_up_skymap(skymap_id) {
 
     const slider_container = d3.select(`#${skymap_id}`)
         .append('div')
-        // TODO: fix this hack at some point
-        .style("margin-bottom", "100%");
+        .attr('class', 'slider-container')
+    // .style("height", `100px`)
 
     const slider = slider_container.append("input")
         .attr("type", "range")

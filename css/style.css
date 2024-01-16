@@ -1,14 +1,36 @@
-#body{
-  overflow: hidden;
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  /* Disable horizontal scrolling */
+}
+
+.container-flex {
+  flex-grow: 1;
+}
+
+header {
+  height: 60px;
+}
+
+footer {
+  height: 30px;
 }
 
 #main {
-  margin: 10px
+  height: calc(100vh - 60px - 40px);
+  overflow-y: hidden;
+  overflow-x: hidden;
+  /* Add this to enable vertical scrolling if the content overflows */
 }
+
 
 #map {
   width: 100%;
-  aspect-ratio: 2/1;
+  aspect-ratio: 7/3;
   margin: 30px;
 }
 
@@ -171,7 +193,7 @@
   stroke: #c98493;
 }
 
-.selected{
+.selected {
   stroke: #000000;
   stroke-width: 2px;
 }
@@ -190,6 +212,10 @@
   fill: none;
 }
 
+.slider-container {
+  position: absolute;
+  bottom: 200px;
+}
 
 .slider {
   height: 20px;
