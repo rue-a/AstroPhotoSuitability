@@ -16,9 +16,44 @@ header {
   height: 60px;
 }
 
+
 footer {
   height: 30px;
 }
+
+.footer-text {
+  font-size: x-small;
+  margin: auto;
+  text-align: center;
+  top: 50%;
+  transform: translate(0, +50%);
+}
+
+a:link {
+  color: ghostwhite;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+a:visited {
+  color: ghostwhite;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+a:hover {
+  color: white;
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+a:active {
+  color: ghostwhite;
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+
 
 #main {
   height: calc(100vh - 60px - 40px);
