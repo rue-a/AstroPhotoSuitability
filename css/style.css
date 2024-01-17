@@ -190,7 +190,7 @@ footer {
 .inner-orientation-circle,
 .outer-orientation-circle {
   fill: none;
-  stroke: #c98493;
+  stroke: #ffffff;
 }
 
 .selected {
@@ -205,7 +205,7 @@ footer {
 
 .line-label {
   font-size: xx-small;
-  fill: #c98493
+  fill: #ffffff
 }
 
 .orientation-circle {
