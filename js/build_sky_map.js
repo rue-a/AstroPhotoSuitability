@@ -30,7 +30,7 @@ function set_up_skymap(skymap_id) {
 
     const angleScale = d3.scaleLinear()
         .domain([0, 360])
-        .range([-Math.PI / 2, 3 / 2 * Math.PI]);
+        .range([3 / 2 * Math.PI, -Math.PI / 2]);
 
     const svg = d3.select(`#${skymap_id}`)
         .append('svg')
