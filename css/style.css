@@ -30,25 +30,25 @@ footer {
 }
 
 a:link {
-  color: ghostwhite;
+  color: #FFF8E7;
   background-color: transparent;
   text-decoration: none;
 }
 
 a:visited {
-  color: ghostwhite;
+  color: #FFF8E7;
   background-color: transparent;
   text-decoration: none;
 }
 
 a:hover {
-  color: white;
+  color: #FFF8E7;
   background-color: transparent;
   text-decoration: underline;
 }
 
 a:active {
-  color: ghostwhite;
+  color: #FFF8E7;
   background-color: transparent;
   text-decoration: underline;
 }
@@ -168,7 +168,7 @@ a:active {
 
 
 .astro-object-position {
-  fill: #dadada;
+  fill: #FFF8E7;
   stroke: none;
   r: 3;
 }
@@ -178,14 +178,14 @@ a:active {
 }
 
 .astro-object-label {
-  fill: #dadada;
+  fill: #FFF8E7;
   stroke: none;
   font-size: normal;
   font-weight: 400;
 }
 
 .astro-object-label:hover {
-  fill: #dadada;
+  fill: #FFF8E7;
   stroke: none;
   font-size: x-large;
   font-weight: 700;
@@ -197,7 +197,7 @@ a:active {
 
 .hovertip {
   position: absolute;
-  background-color: white;
+  background-color: #FFF8E7;
   border: 1px solid black;
   padding: 5px;
   margin: 5px;
@@ -225,7 +225,7 @@ a:active {
 .inner-orientation-circle,
 .outer-orientation-circle {
   fill: none;
-  stroke: #ffffff;
+  stroke: #FFF8E7;
 }
 
 .selected {
@@ -240,7 +240,7 @@ a:active {
 
 .line-label {
   font-size: xx-small;
-  fill: #ffffff
+  fill: #FFF8E7
 }
 
 .orientation-circle {
@@ -255,10 +255,11 @@ a:active {
 .slider {
   height: 20px;
   appearance: none;
-  background: #ddd;
+  background: white;
   border-radius: 5px;
   outline: none;
 }
+
 
 .slider::-webkit-slider-thumb {
   width: 20px;
